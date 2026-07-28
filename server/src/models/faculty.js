@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 
-const studentSchema = new mongoose.Schema({
+const facultySchema = new mongoose.Schema({
 
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -9,33 +9,27 @@ const studentSchema = new mongoose.Schema({
         required: true
     },
 
-    rollNumber: {
+    employeeId: {
         type: String,
         required: true,
         unique: true
     },
 
     department: {
-       type: mongoose.Schema.Types.ObjectId,
-        ref:"Department",
-        required:true
-
-    },
-
-    semester: {
-        type: Number,
+        type: String,
         required: true
     },
 
-    skills: [
+    designation: {
+        type: String,
+        required: true
+    },
+
+    subjects: [
         {
             type: String
         }
     ],
-
-    cgpa: {
-        type: Number
-    },
 
     phone: {
         type: String
@@ -47,4 +41,4 @@ const studentSchema = new mongoose.Schema({
 });
 
 
-module.exports = mongoose.model("Student", studentSchema);
+module.exports = mongoose.model("Faculty", facultySchema);

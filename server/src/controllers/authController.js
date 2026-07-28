@@ -3,11 +3,22 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 
+// REGISTER API
 const registerUser = async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
 
+    try {
+
+        const {
+            name,
+            email,
+            password,
+            role
+        } = req.body;
+
+
+        // Check existing user
         const existingUser = await User.findOne({ email });
+
 
         if (existingUser) {
             return res.status(400).json({
@@ -15,34 +26,54 @@ const registerUser = async (req, res) => {
             });
         }
 
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+
+        // Create user only
         const user = await User.create({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            role
         });
+
 
         res.status(201).json({
-            message: "User registered successfully"
+            message: "User registered successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
 
+
     } catch (error) {
+
         console.log(error);
 
-    res.status(500).json({
-        message: error.message
-    });
+        res.status(500).json({
+            message: error.message
+        });
+
     }
 };
 
 
 
+
 // LOGIN API
 const loginUser = async (req, res) => {
+
     try {
 
-        const { email, password } = req.body;
+        const {
+            email,
+            password
+        } = req.body;
 
 
         // Find user
@@ -56,7 +87,7 @@ const loginUser = async (req, res) => {
         }
 
 
-        // Compare password
+        // Check password
         const isPasswordCorrect = await bcrypt.compare(
             password,
             user.password
@@ -70,7 +101,8 @@ const loginUser = async (req, res) => {
         }
 
 
-        // Generate JWT token
+
+        // Generate token
         const token = jwt.sign(
             {
                 id: user._id,
@@ -83,18 +115,33 @@ const loginUser = async (req, res) => {
         );
 
 
+
         res.status(200).json({
+
             message: "Login successful",
-            token
+
+            token,
+
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+
         });
+
 
 
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };
+
 
 
 module.exports = {

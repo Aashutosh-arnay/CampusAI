@@ -5,6 +5,8 @@ const createStudentProfile = async (req, res) => {
 
     try {
 
+        console.log(req.body);
+
         const {
             rollNumber,
             department,
@@ -49,8 +51,10 @@ const getStudentProfile = async (req, res) => {
     try {
 
         const student = await Student.findOne({
-            user: req.user.id
-        }).populate("user", "name email role");
+        user: req.user.id
+        })
+        .populate("user", "name email role -_id")
+        .populate("department", "name code -_id")
 
 
         if (!student) {
