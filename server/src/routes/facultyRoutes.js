@@ -1,5 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../middleware/validationMiddleware");
+
+const {
+    createFacultyValidation
+} = require("../validations/facultyValidation");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
@@ -22,6 +27,8 @@ router.put(
     "/profile",
     authMiddleware,
     roleMiddleware("faculty"),
+    createFacultyValidation,
+    validate,
     updateFacultyProfile
 );
 

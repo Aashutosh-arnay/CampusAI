@@ -2,55 +2,55 @@ const express = require("express");
 const router = express.Router();
 const validate = require("../middleware/validationMiddleware");
 
-const {
-    createCourseValidation
-} = require("../validations/courseValidation");
 
 const {
-    createCourse,
-    getAllCourse,
-    getCourseById,
-    updateCourse,
-    deleteCourse
-} = require("../controllers/courseController");
+    createSubjectValidation
+} = require("../validations/subjectValidation");
+
+const {
+    createSubject,
+    getAllSubjects,
+    getSubjectById,
+    updateSubject,
+    deleteSubject
+} = require("../controllers/subjectController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
-// Create Course (Admin Only)
+// Create Subject (Admin Only)
 router.post(
     "/",
     authMiddleware,
     roleMiddleware("admin"),
-    createCourseValidation,
+    createSubjectValidation,
     validate,
-    createCourse
+    createSubject
 );
-
-// Get All Courses
+// Get All Subjects
 router.get(
     "/",
     authMiddleware,
-    getAllCourse
+    getAllSubjects
 );
-// Get Course By ID
+// Get Subject By ID
 router.get(
     "/:id",
     authMiddleware,
-    getCourseById
+    getSubjectById
 );
-// Update Course (Admin Only)
+// Update Subject (Admin Only)
 router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    updateCourse
+    updateSubject
 );
-// Delete Course (Admin Only)
+// Delete Subject (Admin Only)
 router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    deleteCourse
+    deleteSubject
 );
 module.exports = router;

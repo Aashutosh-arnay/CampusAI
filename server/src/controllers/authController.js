@@ -1,3 +1,5 @@
+const Student = require("../models/Student");
+const Faculty = require("../models/Faculty");
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -12,7 +14,18 @@ const registerUser = async (req, res) => {
             name,
             email,
             password,
-            role
+            role,
+
+            // Student fields
+            rollNumber,
+            semester,
+
+            // Faculty fields
+            employeeId,
+            designation,
+
+            // Common field
+            department
         } = req.body;
 
 
@@ -38,6 +51,30 @@ const registerUser = async (req, res) => {
             password: hashedPassword,
             role
         });
+
+        // Create student profile
+        if (role === "student") {
+
+            await Student.create({
+                user: user._id,
+                rollNumber,
+                department,
+                semester
+            });
+
+        }
+
+        // Create faculty profile
+        if (role === "faculty") {
+
+            await Faculty.create({
+                user: user._id,
+                employeeId,
+                department,
+                designation
+            });
+
+        }
 
 
         res.status(201).json({

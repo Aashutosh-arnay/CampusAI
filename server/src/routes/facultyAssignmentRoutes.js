@@ -1,56 +1,50 @@
 const express = require("express");
 const router = express.Router();
-const validate = require("../middleware/validationMiddleware");
 
 const {
-    createCourseValidation
-} = require("../validations/courseValidation");
+    assignFaculty,
+    getAllAssignments,
+    getAssignmentById,
+    updateAssignment,
+    deleteAssignment
 
-const {
-    createCourse,
-    getAllCourse,
-    getCourseById,
-    updateCourse,
-    deleteCourse
-} = require("../controllers/courseController");
+} = require("../controllers/facultyAssignmentController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
-// Create Course (Admin Only)
+// Assign Faculty to Subject (Admin Only)
 router.post(
     "/",
     authMiddleware,
     roleMiddleware("admin"),
-    createCourseValidation,
-    validate,
-    createCourse
+    assignFaculty
 );
-
-// Get All Courses
+// Get All Faculty Assignments
 router.get(
     "/",
     authMiddleware,
-    getAllCourse
+    getAllAssignments
 );
-// Get Course By ID
+// Get Assignment By ID
 router.get(
     "/:id",
     authMiddleware,
-    getCourseById
+    getAssignmentById
 );
-// Update Course (Admin Only)
+// Update Assignment (Admin Only)
 router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    updateCourse
+    updateAssignment
 );
-// Delete Course (Admin Only)
+// Delete Assignment (Admin Only)
 router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    deleteCourse
+    deleteAssignment
 );
+
 module.exports = router;

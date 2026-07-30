@@ -3,6 +3,11 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
+const validate = require("../middleware/validationMiddleware");
+
+const {
+    createStudentValidation
+} = require("../validations/studentValidation");
 
 const {
     createStudentProfile,
@@ -17,6 +22,8 @@ router.post(
     "/profile",
     authMiddleware,
     roleMiddleware("student"),
+    createStudentValidation,
+    validate,
     createStudentProfile
 );
 

@@ -1,173 +1,130 @@
 const Course = require("../models/Course");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
 
 // Create Course
-const createCourse = async (req, res) => {
-    try {
+const createCourse = asyncHandler(async (req, res) => {
 
-        const {
-            name,
-            code,
-            department,
-            duration,
-            description
-        } = req.body;
+    const {
+        name,
+        code,
+        department,
+        duration,
+        description
+    } = req.body;
 
-        // Check if course already exists
-        const existingCourse = await Course.findOne({ code });
+    // Check if course already exists
+    const existingCourse = await Course.findOne({ code });
+
+    if (existingCourse) {
+        throw new AppError("Course already exists", 400);
+    }
+
+    const course = await Course.create({
+        name,
+        code,
+        department,
+        duration,
+        description
+    });
+
+    res.status(201).json({
+        success: true,
+        message: "Course created successfully",
+        data: course
+    });
+
+});
+// Get All Courses
+const getAllCourse = asyncHandler(async (req, res) => {
+
+    const courses = await Course.find()
+        .populate("department", "name code -_id");
+
+    res.status(200).json({
+        success: true,
+        totalCourses: courses.length,
+        data: courses
+    });
+
+});
+// Get Course By ID
+const getCourseById = asyncHandler(async (req, res) => {
+
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+        .populate("department", "name code -_id");
+
+    if (!course) {
+        throw new AppError("Course not found", 404);
+    }
+
+    res.status(200).json({
+        success: true,
+        data: course
+    });
+
+});
+// Update Course
+const updateCourse = asyncHandler(async (req, res) => {
+
+    const { id } = req.params;
+
+    const course = await Course.findById(id);
+
+    if (!course) {
+        throw new AppError("Course not found", 404);
+    }
+
+    // Check if another course already uses the same code
+    if (req.body.code) {
+
+        const existingCourse = await Course.findOne({
+            code: req.body.code,
+            _id: { $ne: id }
+        });
 
         if (existingCourse) {
-            return res.status(400).json({
-                message: "Course already exists"
-            });
+            throw new AppError("Course code already exists", 400);
         }
-
-        const course = await Course.create({
-            name,
-            code,
-            department,
-            duration,
-            description
-        });
-
-        res.status(201).json({
-            message: "Course created successfully",
-            course
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
     }
-};
-// Get All Courses
-const getAllCourse = async (req, res) => {
-    try {
 
-        const courses = await Course.find()
-            .populate("department", "name code -_id");
-
-        res.status(200).json({
-            totalCourses: courses.length,
-            courses
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Get Course By ID
-const getCourseById = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const course = await Course.findById(id)
-            .populate("department", "name code -_id");
-
-        if (!course) {
-            return res.status(404).json({
-                message: "Course not found"
-            });
+    const updatedCourse = await Course.findByIdAndUpdate(
+        id,
+        req.body,
+        {
+            new: true,
+            runValidators: true
         }
+    ).populate("department", "name code -_id");
 
-        res.status(200).json({
-            course
-        });
+    res.status(200).json({
+        success: true,
+        message: "Course updated successfully",
+        data: updatedCourse
+    });
 
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Update Course
-const updateCourse = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const course = await Course.findById(id);
-
-        if (!course) {
-            return res.status(404).json({
-                message: "Course not found"
-            });
-        }
-        // Check if another course already uses the same code
-        if (req.body.code) {
-
-            const existingCourse = await Course.findOne({
-                code: req.body.code,
-                _id: { $ne: id }
-            });
-
-            if (existingCourse) {
-                return res.status(400).json({
-                    message: "Course code already exists"
-                });
-            }
-        }
-
-        const updatedCourse = await Course.findByIdAndUpdate(
-            id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        ).populate("department", "name code -_id");
-
-        res.status(200).json({
-            message: "Course updated successfully",
-            course: updatedCourse
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-
+});
 // Delete Course
-const deleteCourse = async (req, res) => {
-    try {
+const deleteCourse = asyncHandler(async (req, res) => {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const course = await Course.findById(id);
+    const course = await Course.findById(id);
 
-        if (!course) {
-            return res.status(404).json({
-                message: "Course not found"
-            });
-        }
-
-        await Course.findByIdAndDelete(id);
-
-        res.status(200).json({
-            message: "Course deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!course) {
+        throw new AppError("Course not found", 404);
     }
-};
+
+    await Course.findByIdAndDelete(id);
+
+    res.status(200).json({
+        success: true,
+        message: "Course deleted successfully"
+    });
+
+});
 module.exports = {
     createCourse,
     getAllCourse,

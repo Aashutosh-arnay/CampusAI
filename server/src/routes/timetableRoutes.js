@@ -1,56 +1,57 @@
 const express = require("express");
+
 const router = express.Router();
 const validate = require("../middleware/validationMiddleware");
 
 const {
-    createCourseValidation
-} = require("../validations/courseValidation");
+    createTimetableValidation
+} = require("../validations/timetableValidation");
 
 const {
-    createCourse,
-    getAllCourse,
-    getCourseById,
-    updateCourse,
-    deleteCourse
-} = require("../controllers/courseController");
+    createTimetable,
+    getSectionTimetable,
+    getFacultyTimetable,
+    updateTimetable,
+    deleteTimetable
+} = require("../controllers/timetableController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
-// Create Course (Admin Only)
+// Create Timetable (Admin Only)
 router.post(
     "/",
     authMiddleware,
     roleMiddleware("admin"),
-    createCourseValidation,
+    createTimetableValidation,
     validate,
-    createCourse
+    createTimetable
 );
-
-// Get All Courses
+// Get Timetable by Section
 router.get(
-    "/",
+    "/section/:academicYear/:semester/:section",
     authMiddleware,
-    getAllCourse
+    getSectionTimetable
 );
-// Get Course By ID
+// Get Faculty Timetable
 router.get(
-    "/:id",
+    "/faculty/:facultyAssignmentId",
     authMiddleware,
-    getCourseById
+    getFacultyTimetable
 );
-// Update Course (Admin Only)
+// Update Timetable
 router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    updateCourse
+    updateTimetable
 );
-// Delete Course (Admin Only)
+// Delete Timetable
 router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
-    deleteCourse
+    deleteTimetable
 );
+
 module.exports = router;
