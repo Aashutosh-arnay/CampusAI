@@ -1,76 +1,91 @@
 const Faculty = require("../models/Faculty");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const ApiResponse = require("../utils/apiResponse");
 
 
-const getFacultyProfile = async (req, res) => {
-
-    try {
-
-        const faculty = await Faculty.findOne({
-            user: req.user.id
-        }).populate("user", "name email role");
+// Get Faculty Profile
+const getFacultyProfile = asyncHandler(async (req, res) => {
 
 
-        if (!faculty) {
-            return res.status(404).json({
-                message: "Faculty profile not found"
-            });
-        }
+    const faculty = await Faculty.findOne({
+
+        user: req.user.id
+
+    })
+    .populate("user", "name email role");
 
 
-        res.status(200).json({
-            faculty
-        });
+    if (!faculty) {
 
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
-const updateFacultyProfile = async (req, res) => {
-
-    try {
-
-        const faculty = await Faculty.findOneAndUpdate(
-            {
-                user: req.user.id
-            },
-            req.body,
-            {
-                new: true
-            }
+        throw new ApiError(
+            404,
+            "Faculty profile not found"
         );
 
+    }
 
-        if (!faculty) {
-            return res.status(404).json({
-                message: "Faculty profile not found"
-            });
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Faculty profile fetched successfully",
+            faculty
+        )
+
+    );
+
+});
+
+
+// Update Faculty Profile
+const updateFacultyProfile = asyncHandler(async (req, res) => {
+
+
+    const faculty = await Faculty.findOneAndUpdate(
+
+        {
+            user: req.user.id
+        },
+
+        req.body,
+
+        {
+            new:true,
+            runValidators:true
         }
 
-
-        res.status(200).json({
-            message: "Faculty profile updated successfully",
-            faculty
-        });
+    );
 
 
-    } catch (error) {
+    if (!faculty) {
 
-        res.status(500).json({
-            message: error.message
-        });
+        throw new ApiError(
+            404,
+            "Faculty profile not found"
+        );
 
     }
 
-};
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Faculty profile updated successfully",
+            faculty
+        )
+
+    );
+
+
+});
 
 
 module.exports = {
+
     getFacultyProfile,
     updateFacultyProfile
+
 };

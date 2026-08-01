@@ -1,12 +1,16 @@
 const Enrollment = require("../models/Enrollment");
 const Student = require("../models/Student");
 const Subject = require("../models/Subject");
-const asyncHandler = require("../utils/asyncHandler");
-const AppError = require("../utils/AppError");
+
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
 
 
 // Create Enrollment
 const createEnrollment = asyncHandler(async (req, res) => {
+
 
     const {
         student,
@@ -16,125 +20,236 @@ const createEnrollment = asyncHandler(async (req, res) => {
         section
     } = req.body;
 
-    // Check Student exists
+
     const studentExists = await Student.findById(student);
 
-    if (!studentExists) {
-        throw new AppError("Student not found", 404);
+    if(!studentExists){
+
+        throw new ApiError(
+            404,
+            "Student not found"
+        );
+
     }
 
-    // Check Subject exists
+
     const subjectExists = await Subject.findById(subject);
 
-    if (!subjectExists) {
-        throw new AppError("Subject not found", 404);
+    if(!subjectExists){
+
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
+
     }
 
-    // Check duplicate enrollment
+
     const alreadyEnrolled = await Enrollment.findOne({
+
         student,
         subject,
         academicYear,
         semester
+
     });
 
-    if (alreadyEnrolled) {
-        throw new AppError(
-            "Student already enrolled in this subject",
-            400
+
+    if(alreadyEnrolled){
+
+        throw new ApiError(
+            400,
+            "Student already enrolled in this subject"
         );
+
     }
 
+
     const enrollment = await Enrollment.create({
+
         student,
         subject,
         academicYear,
         semester,
         section
+
     });
 
-    res.status(201).json({
-        success: true,
-        message: "Student enrolled successfully",
-        data: enrollment
-    });
+
+    res.status(201).json(
+
+        new ApiResponse(
+            201,
+            "Student enrolled successfully",
+            enrollment
+        )
+
+    );
 
 });
-// Get Student Enrollments
-const getStudentEnrollments = asyncHandler(async (req, res) => {
 
-    const { studentId } = req.params;
+
+
+// Get Student Enrollments
+const getStudentEnrollments = asyncHandler(async(req,res)=>{
+
+
+    const {studentId}=req.params;
+
 
     const student = await Student.findById(studentId);
 
-    if (!student) {
-        throw new AppError("Student not found", 404);
+
+    if(!student){
+
+        throw new ApiError(
+            404,
+            "Student not found"
+        );
+
     }
 
-    const enrollments = await Enrollment.find({
-        student: studentId
-    }).populate({
-        path: "subject",
-        select: "name code semester credits"
-    });
 
-    res.status(200).json({
-        success: true,
-        count: enrollments.length,
-        data: enrollments
-    });
+    const features = new APIFeatures(
+
+        Enrollment.find({
+            student:studentId
+        })
+        .populate({
+            path:"subject",
+            select:"name code semester credits"
+        }),
+
+        req.query
+
+    )
+    .sort()
+    .limitFields()
+    .paginate();
+
+
+
+    const enrollments = await features.query;
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Enrollments fetched successfully",
+            enrollments,
+            enrollments.length
+        )
+
+    );
+
 
 });
-// Get Students Enrolled in a Subject
-const getSubjectStudents = asyncHandler(async (req, res) => {
 
-    const { subjectId } = req.params;
+
+
+// Get Students Enrolled in Subject
+const getSubjectStudents = asyncHandler(async(req,res)=>{
+
+
+    const {subjectId}=req.params;
+
 
     const subject = await Subject.findById(subjectId);
 
-    if (!subject) {
-        throw new AppError("Subject not found", 404);
+
+    if(!subject){
+
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
+
     }
+
+
 
     const enrollments = await Enrollment.find({
-        subject: subjectId
-    }).populate({
-        path: "student",
-        select: "rollNumber section semester",
-        populate: {
-            path: "user",
-            select: "name email"
+
+        subject:subjectId
+
+    })
+    .populate({
+
+        path:"student",
+
+        select:"rollNumber section semester",
+
+        populate:{
+            path:"user",
+            select:"name email"
         }
+
     });
 
-    res.status(200).json({
-        success: true,
-        count: enrollments.length,
-        data: enrollments
-    });
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Subject students fetched successfully",
+            enrollments,
+            enrollments.length
+        )
+
+    );
+
 
 });
+
+
+
 // Delete Enrollment
-const deleteEnrollment = asyncHandler(async (req, res) => {
+const deleteEnrollment = asyncHandler(async(req,res)=>{
 
-    const { id } = req.params;
 
-    const enrollment = await Enrollment.findById(id);
+    const {id}=req.params;
 
-    if (!enrollment) {
-        throw new AppError("Enrollment not found", 404);
+
+    const enrollment =
+    await Enrollment.findById(id);
+
+
+
+    if(!enrollment){
+
+        throw new ApiError(
+            404,
+            "Enrollment not found"
+        );
+
     }
+
+
 
     await Enrollment.findByIdAndDelete(id);
 
-    res.status(200).json({
-        success: true,
-        message: "Enrollment deleted successfully"
-    });
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Enrollment deleted successfully",
+            null
+        )
+
+    );
+
 
 });
 
+
+
 module.exports = {
+
     createEnrollment,
     getStudentEnrollments,
     getSubjectStudents,

@@ -1,6 +1,9 @@
 const Subject = require("../models/Subject");
-const asyncHandler = require("../utils/asyncHandler");
-const AppError = require("../utils/AppError");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
+
 
 // Create Subject
 const createSubject = asyncHandler(async (req, res) => {
@@ -14,11 +17,13 @@ const createSubject = asyncHandler(async (req, res) => {
         description
     } = req.body;
 
-    // Check duplicate subject code
     const existingSubject = await Subject.findOne({ code });
 
     if (existingSubject) {
-        throw new AppError("Subject already exists", 400);
+        throw new ApiError(
+            400,
+            "Subject already exists"
+        );
     }
 
     const subject = await Subject.create({
@@ -30,24 +35,40 @@ const createSubject = asyncHandler(async (req, res) => {
         description
     });
 
-    res.status(201).json({
-        success: true,
-        message: "Subject created successfully",
-        data: subject
-    });
+    res.status(201).json(
+        new ApiResponse(
+            201,
+            "Subject created successfully",
+            subject
+        )
+    );
 
 });
+
 // Get All Subjects
 const getAllSubjects = asyncHandler(async (req, res) => {
 
-    const subjects = await Subject.find()
-        .populate("course", "name code -_id");
+    const features = new APIFeatures(
+        Subject.find()
+            .populate("course", "name code -_id"),
+        req.query
+    )
+    .filter()
+    .search(["name", "code"])
+    .sort()
+    .limitFields()
+    .paginate();
 
-    res.status(200).json({
-        success: true,
-        totalSubjects: subjects.length,
-        data: subjects
-    });
+    const subjects = await features.query;
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Subjects fetched successfully",
+            subjects,
+            subjects.length
+        )
+    );
 
 });
 // Get Subject By ID
@@ -59,13 +80,19 @@ const getSubjectById = asyncHandler(async (req, res) => {
         .populate("course", "name code -_id");
 
     if (!subject) {
-        throw new AppError("Subject not found", 404);
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
     }
 
-    res.status(200).json({
-        success: true,
-        data: subject
-    });
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Subject fetched successfully",
+            subject
+        )
+    );
 
 });
 // Update Subject
@@ -76,10 +103,12 @@ const updateSubject = asyncHandler(async (req, res) => {
     const subject = await Subject.findById(id);
 
     if (!subject) {
-        throw new AppError("Subject not found", 404);
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
     }
 
-    // Check if another subject already uses the same code
     if (req.body.code) {
 
         const existingSubject = await Subject.findOne({
@@ -88,7 +117,10 @@ const updateSubject = asyncHandler(async (req, res) => {
         });
 
         if (existingSubject) {
-            throw new AppError("Subject code already exists", 400);
+            throw new ApiError(
+                400,
+                "Subject code already exists"
+            );
         }
     }
 
@@ -99,15 +131,19 @@ const updateSubject = asyncHandler(async (req, res) => {
             new: true,
             runValidators: true
         }
-    ).populate("course", "name code -_id");
+    )
+    .populate("course", "name code -_id");
 
-    res.status(200).json({
-        success: true,
-        message: "Subject updated successfully",
-        data: updatedSubject
-    });
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Subject updated successfully",
+            updatedSubject
+        )
+    );
 
 });
+
 
 // Delete Subject
 const deleteSubject = asyncHandler(async (req, res) => {
@@ -117,17 +153,24 @@ const deleteSubject = asyncHandler(async (req, res) => {
     const subject = await Subject.findById(id);
 
     if (!subject) {
-        throw new AppError("Subject not found", 404);
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
     }
 
     await Subject.findByIdAndDelete(id);
 
-    res.status(200).json({
-        success: true,
-        message: "Subject deleted successfully"
-    });
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Subject deleted successfully",
+            null
+        )
+    );
 
 });
+
 module.exports = {
     createSubject,
     getAllSubjects,

@@ -1,155 +1,156 @@
 const Student = require("../models/Student");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const ApiResponse = require("../utils/apiResponse");
 
 
-const createStudentProfile = async (req, res) => {
+// Create Student Profile
+const createStudentProfile = asyncHandler(async (req, res) => {
 
-    try {
-
-        console.log(req.body);
-
-        const {
-            rollNumber,
-            department,
-            semester,
-            skills,
-            cgpa,
-            phone
-        } = req.body;
+    const {
+        rollNumber,
+        department,
+        semester,
+        skills,
+        cgpa,
+        phone
+    } = req.body;
 
 
-        const student = await Student.create({
+    const student = await Student.create({
 
-            user: req.user.id,
+        user: req.user.id,
+        rollNumber,
+        department,
+        semester,
+        skills,
+        cgpa,
+        phone
 
-            rollNumber,
-            department,
-            semester,
-            skills,
-            cgpa,
-            phone
-
-        });
+    });
 
 
-        res.status(201).json({
-            message: "Student profile created successfully",
+    res.status(201).json(
+        new ApiResponse(
+            201,
+            "Student profile created successfully",
             student
-        });
+        )
+    );
+
+});
 
 
-    } catch (error) {
+// Get Student Profile
+const getStudentProfile = asyncHandler(async (req, res) => {
 
-        res.status(500).json({
-            message: error.message
-        });
 
-    }
-
-};
-const getStudentProfile = async (req, res) => {
-
-    try {
-
-        const student = await Student.findOne({
+    const student = await Student.findOne({
         user: req.user.id
-        })
-        .populate("user", "name email role -_id")
-        .populate("department", "name code -_id")
+    })
+    .populate("user", "name email role -_id")
+    .populate("department", "name code -_id");
 
 
-        if (!student) {
-            return res.status(404).json({
-                message: "Student profile not found"
-            });
-        }
+    if (!student) {
 
-
-        res.status(200).json({
-            student
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
-const updateStudentProfile = async (req, res) => {
-
-    try {
-
-        const student = await Student.findOneAndUpdate(
-            {
-                user: req.user.id
-            },
-            req.body,
-            {
-                new: true
-            }
+        throw new ApiError(
+            404,
+            "Student profile not found"
         );
 
-
-        if (!student) {
-            return res.status(404).json({
-                message: "Student profile not found"
-            });
-        }
+    }
 
 
-        res.status(200).json({
-            message: "Student profile updated successfully",
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Student profile fetched successfully",
             student
-        });
+        )
+    );
+
+});
 
 
-    } catch (error) {
+// Update Student Profile
+const updateStudentProfile = asyncHandler(async (req, res) => {
 
-        res.status(500).json({
-            message: error.message
-        });
 
-    }
+    const student = await Student.findOneAndUpdate(
 
-};
-const deleteStudentProfile = async (req, res) => {
-
-    try {
-
-        const student = await Student.findOneAndDelete({
+        {
             user: req.user.id
-        });
+        },
 
+        req.body,
 
-        if (!student) {
-            return res.status(404).json({
-                message: "Student profile not found"
-            });
+        {
+            new:true,
+            runValidators:true
         }
 
-
-        res.status(200).json({
-            message: "Student profile deleted successfully"
-        });
+    );
 
 
-    } catch (error) {
+    if (!student) {
 
-        res.status(500).json({
-            message: error.message
-        });
+        throw new ApiError(
+            404,
+            "Student profile not found"
+        );
 
     }
 
-};
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Student profile updated successfully",
+            student
+        )
+    );
+
+});
+
+
+// Delete Student Profile
+const deleteStudentProfile = asyncHandler(async (req,res)=>{
+
+
+    const student = await Student.findOneAndDelete({
+
+        user:req.user.id
+
+    });
+
+
+    if(!student){
+
+        throw new ApiError(
+            404,
+            "Student profile not found"
+        );
+
+    }
+
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Student profile deleted successfully",
+            null
+        )
+    );
+
+});
 
 
 module.exports = {
+
     createStudentProfile,
     getStudentProfile,
     updateStudentProfile,
-    deleteStudentProfile 
+    deleteStudentProfile
+
 };

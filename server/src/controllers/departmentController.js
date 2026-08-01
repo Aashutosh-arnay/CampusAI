@@ -1,79 +1,120 @@
 const Department = require("../models/Department");
+const asyncHandler = require("express-async-handler");
+
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
+
 
 
 // Create Department
-const createDepartment = async (req, res) => {
-
-    try {
-
-        const { name, code, description, hod } = req.body;
+const createDepartment = asyncHandler(async (req, res) => {
 
 
-        const existingDepartment = await Department.findOne({
-            code
-        });
+    const {
+        name,
+        code,
+        description,
+        hod
+    } = req.body;
 
 
-        if (existingDepartment) {
-            return res.status(400).json({
-                message: "Department already exists"
-            });
-        }
+
+    const existingDepartment = await Department.findOne({
+        code
+    });
 
 
-        const department = await Department.create({
-            name,
-            code,
-            description,
-            hod
-        });
 
+    if(existingDepartment){
 
-        res.status(201).json({
-            message: "Department created successfully",
-            department
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
+        throw new ApiError(
+            400,
+            "Department already exists"
+        );
 
     }
 
-};
+
+
+    const department = await Department.create({
+
+        name,
+        code,
+        description,
+        hod
+
+    });
+
+
+
+    res.status(201).json(
+
+        new ApiResponse(
+            201,
+            "Department created successfully",
+            department
+        )
+
+    );
+
+
+});
+
 
 
 
 // Get All Departments
-const getAllDepartments = async (req, res) => {
-
-    try {
-
-        const departments = await Department.find()
-            .populate("hod", "name email role");
+const getAllDepartments = asyncHandler(async (req, res) => {
 
 
-        res.status(200).json({
-            departments
-        });
+    const features = new APIFeatures(
+
+        Department.find()
+        .populate(
+            "hod",
+            "name email role"
+        ),
+
+        req.query
+
+    )
+    .filter()
+    .search(["name", "code"])
+    .sort()
+    .limitFields()
+    .paginate();
 
 
-    } catch (error) {
 
-        res.status(500).json({
-            message: error.message
-        });
+    const departments = await features.query;
 
-    }
 
-};
+
+    res.status(200).json(
+
+        new ApiResponse(
+
+            200,
+
+            "Departments fetched successfully",
+
+            departments,
+
+            departments.length
+
+        )
+
+    );
+
+
+});
 
 
 
 module.exports = {
+
     createDepartment,
     getAllDepartments
+
 };

@@ -1,321 +1,496 @@
 const Attendance = require("../models/Attendance");
 const Enrollment = require("../models/Enrollment");
 const FacultyAssignment = require("../models/FacultyAssignment");
-
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
 // Mark Attendance
-const markAttendance = async (req, res) => {
-    try {
+const markAttendance = asyncHandler(async (req, res) => {
+    const {
+        enrollment,
+        facultyAssignment,
+        date,
+        status,
+        remarks
+    } = req.body;
+    const enrollmentExists =
+    await Enrollment.findById(enrollment);
+    if(!enrollmentExists){
 
-        const {
-            enrollment,
-            facultyAssignment,
-            date,
-            status,
-            remarks
-        } = req.body;
-
-        // Check enrollment exists
-        const enrollmentExists = await Enrollment.findById(enrollment);
-
-        if (!enrollmentExists) {
-            return res.status(404).json({
-                message: "Enrollment not found"
-            });
-        }
-
-        // Check faculty assignment exists
-        const assignmentExists = await FacultyAssignment.findById(facultyAssignment);
-
-        if (!assignmentExists) {
-            return res.status(404).json({
-                message: "Faculty assignment not found"
-            });
-        }
-
-        // Prevent duplicate attendance for the same date
-        const alreadyMarked = await Attendance.findOne({
-            enrollment,
-            date
-        });
-
-        if (alreadyMarked) {
-            return res.status(400).json({
-                message: "Attendance already marked for this date"
-            });
-        }
-
-        const attendance = await Attendance.create({
-            enrollment,
-            facultyAssignment,
-            date,
-            status,
-            remarks
-        });
-
-        res.status(201).json({
-            message: "Attendance marked successfully",
-            attendance
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Get Student Attendance
-const getStudentAttendance = async (req, res) => {
-    try {
-
-        const { studentId } = req.params;
-
-        const attendance = await Attendance.find()
-            .populate({
-                path: "enrollment",
-                match: {
-                    student: studentId
-                },
-                populate: {
-                    path: "subject",
-                    select: "name code semester credits"
-                }
-            })
-            .populate({
-                path: "facultyAssignment",
-                select: "academicYear semester section"
-            });
-
-
-        const filteredAttendance = attendance.filter(
-            item => item.enrollment !== null
+        throw new ApiError(
+            404,
+            "Enrollment not found"
         );
 
+    }
+    const assignmentExists =
+    await FacultyAssignment.findById(facultyAssignment);
+    if(!assignmentExists){
 
-        res.status(200).json({
-            count: filteredAttendance.length,
-            attendance: filteredAttendance
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
+        throw new ApiError(
+            404,
+            "Faculty assignment not found"
+        );
 
     }
-};
+
+
+
+    const alreadyMarked =
+    await Attendance.findOne({
+
+        enrollment,
+        date
+
+    });
+
+
+
+    if(alreadyMarked){
+
+        throw new ApiError(
+            400,
+            "Attendance already marked for this date"
+        );
+
+    }
+
+
+
+    const attendance =
+    await Attendance.create({
+
+        enrollment,
+        facultyAssignment,
+        date,
+        status,
+        remarks
+
+    });
+
+
+
+    res.status(201).json(
+
+        new ApiResponse(
+            201,
+            "Attendance marked successfully",
+            attendance
+        )
+
+    );
+
+
+});
+
+
+
+// Get Student Attendance
+const getStudentAttendance = asyncHandler(async(req,res)=>{
+
+
+    const {studentId}=req.params;
+
+
+
+    const attendance =
+    await Attendance.find()
+
+    .populate({
+
+        path:"enrollment",
+
+        match:{
+            student:studentId
+        },
+
+        populate:{
+            path:"subject",
+            select:"name code semester credits"
+        }
+
+    })
+
+    .populate({
+
+        path:"facultyAssignment",
+
+        select:"academicYear semester section"
+
+    });
+
+
+
+    const filteredAttendance =
+    attendance.filter(
+        item=>item.enrollment !== null
+    );
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Attendance fetched successfully",
+            filteredAttendance,
+            filteredAttendance.length
+        )
+
+    );
+
+});
 // Get Subject Attendance
-const getSubjectAttendance = async (req, res) => {
-    try {
+const getSubjectAttendance = asyncHandler(async (req, res) => {
 
-        const { subjectId } = req.params;
 
-        const attendance = await Attendance.find()
-            .populate({
-                path: "enrollment",
-                match: {
-                    subject: subjectId
-                },
-                populate: {
+    const { subjectId } = req.params;
+
+
+    const attendance = await Attendance.find()
+
+    .populate({
+
+        path: "enrollment",
+
+        match: {
+            subject: subjectId
+        },
+
+        populate: {
+
+            path: "student",
+
+            select: "rollNumber",
+
+            populate: {
+
+                path: "user",
+
+                select: "name email"
+
+            }
+
+        }
+
+    })
+
+    .populate({
+
+        path: "facultyAssignment",
+
+        select: "academicYear semester section"
+
+    });
+
+
+
+    const filteredAttendance = attendance.filter(
+        item => item.enrollment !== null
+    );
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+
+            200,
+
+            "Subject attendance fetched successfully",
+
+            filteredAttendance,
+
+            filteredAttendance.length
+
+        )
+
+    );
+
+
+});
+
+// Update Attendance
+const updateAttendance = asyncHandler(async (req, res) => {
+
+
+    const { id } = req.params;
+
+
+
+    const attendance = await Attendance.findById(id);
+
+
+
+    if (!attendance) {
+
+        throw new ApiError(
+
+            404,
+
+            "Attendance not found"
+
+        );
+
+    }
+
+
+            const updatedAttendance =
+    await Attendance.findByIdAndUpdate(
+
+        id,
+
+        req.body,
+
+        {
+
+            new: true,
+
+            runValidators: true
+
+        }
+
+    );
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+
+            200,
+
+            "Attendance updated successfully",
+
+            updatedAttendance
+
+        )
+
+    );
+
+
+});
+
+
+
+
+// Delete Attendance
+const deleteAttendance = asyncHandler(async (req, res) => {
+
+
+    const { id } = req.params;
+
+
+
+    const attendance =
+    await Attendance.findById(id);
+
+
+
+    if (!attendance) {
+
+
+        throw new ApiError(
+
+            404,
+
+            "Attendance not found"
+
+        );
+
+    }
+
+
+
+    await Attendance.findByIdAndDelete(id);
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+
+            200,
+
+            "Attendance deleted successfully",
+
+            null
+
+        )
+
+    );
+
+
+});
+// Get Attendance Percentage
+const getAttendancePercentage = asyncHandler(async (req, res) => {
+
+    const {
+        studentId,
+        subjectId
+    } = req.params;
+
+
+    const enrollment = await Enrollment.findOne({
+
+        student: studentId,
+        subject: subjectId
+
+    });
+
+
+    if (!enrollment) {
+
+        throw new ApiError(
+            404,
+            "Enrollment not found"
+        );
+
+    }
+
+
+    const attendanceRecords = await Attendance.find({
+
+        enrollment: enrollment._id
+
+    });
+
+
+    const totalClasses = attendanceRecords.length;
+
+
+    const presentClasses = attendanceRecords.filter(
+
+        attendance => attendance.status === "Present"
+
+    ).length;
+
+
+    const percentage = totalClasses === 0
+
+        ? 0
+
+        : ((presentClasses / totalClasses) * 100).toFixed(2);
+
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+
+            200,
+
+            "Attendance percentage calculated successfully",
+
+            {
+
+                student: studentId,
+
+                subject: subjectId,
+
+                totalClasses,
+
+                presentClasses,
+
+                attendancePercentage: `${percentage}%`
+
+            }
+
+        )
+
+    );
+
+
+});
+
+
+
+
+// Get All Attendance Records
+const getAllAttendance = asyncHandler(async (req, res) => {
+
+
+    const features = new APIFeatures(
+
+        Attendance.find()
+
+        .populate({
+
+            path: "enrollment",
+
+            populate: [
+
+                {
                     path: "student",
-                    select: "rollNumber",
                     populate: {
                         path: "user",
                         select: "name email"
                     }
-                }
-            })
-            .populate({
-                path: "facultyAssignment",
-                select: "academicYear semester section"
-            });
+                },
 
-
-        const filteredAttendance = attendance.filter(
-            item => item.enrollment !== null
-        );
-
-
-        res.status(200).json({
-            count: filteredAttendance.length,
-            attendance: filteredAttendance
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Update Attendance
-const updateAttendance = async (req, res) => {
-
-    try {
-
-        const { id } = req.params;
-
-
-        const attendance = await Attendance.findById(id);
-
-
-        if (!attendance) {
-            return res.status(404).json({
-                message: "Attendance not found"
-            });
-        }
-
-
-        const updatedAttendance =
-            await Attendance.findByIdAndUpdate(
-                id,
-                req.body,
                 {
-                    new: true,
-                    runValidators: true
+                    path: "subject",
+                    select: "name code semester credits"
                 }
-            );
+
+            ]
+
+        })
+
+        .populate({
+
+            path: "facultyAssignment",
+
+            populate: {
+
+                path: "faculty",
+
+                populate: {
+
+                    path: "user",
+
+                    select: "name email"
+
+                }
+
+            }
+
+        }),
+
+        req.query
+
+    )
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
 
 
-        res.status(200).json({
 
-            message: "Attendance updated successfully",
-            attendance: updatedAttendance
-
-        });
+    const attendance = await features.query;
 
 
-    } catch(error){
 
-        res.status(500).json({
-            message: error.message
-        });
+    res.status(200).json(
 
-    }
+        new ApiResponse(
 
-};
-// Delete Attendance
-const deleteAttendance = async (req, res) => {
+            200,
 
-    try {
+            "Attendance records fetched successfully",
 
-        const { id } = req.params;
+            attendance,
 
+            attendance.length
 
-        const attendance = await Attendance.findById(id);
+        )
+
+    );
 
 
-        if (!attendance) {
-            return res.status(404).json({
-                message: "Attendance not found"
-            });
-        }
+});
 
-
-        await Attendance.findByIdAndDelete(id);
-
-
-        res.status(200).json({
-
-            message: "Attendance deleted successfully"
-
-        });
-
-
-    } catch(error){
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
-// Get Attendance Percentage
-const getAttendancePercentage = async (req, res) => {
-
-    try {
-
-        const { studentId, subjectId } = req.params;
-
-
-        const enrollments = await Enrollment.findOne({
-            student: studentId,
-            subject: subjectId
-        });
-
-
-        if (!enrollments) {
-            return res.status(404).json({
-                message: "Enrollment not found"
-            });
-        }
-
-
-        const attendanceRecords = await Attendance.find({
-            enrollment: enrollments._id
-        });
-
-
-        const totalClasses = attendanceRecords.length;
-
-
-        const presentClasses = attendanceRecords.filter(
-            attendance => attendance.status === "Present"
-        ).length;
-
-
-        const percentage = totalClasses === 0
-            ? 0
-            : ((presentClasses / totalClasses) * 100).toFixed(2);
-
-
-        res.status(200).json({
-
-            student: studentId,
-            subject: subjectId,
-            totalClasses,
-            presentClasses,
-            attendancePercentage: `${percentage}%`
-
-        });
-
-
-    } catch(error){
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
-// Get All Attendance Records
-const getAllAttendance = async (req, res) => {
-    try {
-
-        const attendance = await Attendance.find();
-
-        console.log("Attendance count:", await Attendance.countDocuments());
-
-        res.status(200).json({
-            count: attendance.length,
-            attendance
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
 module.exports = {
     markAttendance,
     getStudentAttendance,
@@ -326,3 +501,5 @@ module.exports = {
     getAllAttendance
     
 };
+
+

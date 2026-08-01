@@ -2,247 +2,254 @@ const Marks = require("../models/Marks");
 const Student = require("../models/Student");
 const Subject = require("../models/Subject");
 const FacultyAssignment = require("../models/FacultyAssignment");
+const asyncHandler = require("express-async-handler");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
 
 // Create Marks
-const createMarks = async (req, res) => {
-    try {
+const createMarks = asyncHandler(async (req, res) => {
 
-        const {
-            student,
-            subject,
-            facultyAssignment,
-            examType,
-            marksObtained,
-            totalMarks,
-            remarks
-        } = req.body;
+    const {
+        student,
+        subject,
+        facultyAssignment,
+        examType,
+        marksObtained,
+        totalMarks,
+        remarks
+    } = req.body;
 
-        // Check student exists
-        const studentExists = await Student.findById(student);
+    // Check Student exists
+    const studentExists = await Student.findById(student);
 
-        if (!studentExists) {
-            return res.status(404).json({
-                message: "Student not found"
-            });
-        }
-
-        // Check subject exists
-        const subjectExists = await Subject.findById(subject);
-
-        if (!subjectExists) {
-            return res.status(404).json({
-                message: "Subject not found"
-            });
-        }
-
-        // Check faculty assignment exists
-        const assignmentExists = await FacultyAssignment.findById(facultyAssignment);
-
-        if (!assignmentExists) {
-            return res.status(404).json({
-                message: "Faculty Assignment not found"
-            });
-        }
-
-        const marks = await Marks.create({
-            student,
-            subject,
-            facultyAssignment,
-            examType,
-            marksObtained,
-            totalMarks,
-            remarks
-        });
-
-        res.status(201).json({
-            message: "Marks added successfully",
-            marks
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!studentExists) {
+        throw new ApiError(404, "Student not found");
     }
-};
+
+    // Check Subject exists
+    const subjectExists = await Subject.findById(subject);
+
+    if (!subjectExists) {
+        throw new ApiError(404, "Subject not found");
+    }
+
+    // Check Faculty Assignment exists
+    const assignmentExists = await FacultyAssignment.findById(facultyAssignment);
+
+    if (!assignmentExists) {
+        throw new ApiError(404, "Faculty Assignment not found");
+    }
+
+    // Create Marks
+    const marks = await Marks.create({
+        student,
+        subject,
+        facultyAssignment,
+        examType,
+        marksObtained,
+        totalMarks,
+        remarks
+    });
+
+    res.status(201).json(
+        new ApiResponse(
+            201,
+            "Marks added successfully",
+            marks
+        )
+    );
+
+});
 // Get Student Marks
-const getStudentMarks = async (req, res) => {
-    try {
+const getStudentMarks = asyncHandler(async (req, res) => {
 
-        const { studentId } = req.params;
+    const { studentId } = req.params;
 
-        const marks = await Marks.find({
+    const features = new APIFeatures(
+        Marks.find({
             student: studentId
         })
-        .populate({
-            path: "subject",
-            select: "name code semester credits"
-        })
-        .populate({
-            path: "facultyAssignment",
-            select: "academicYear semester section"
-        });
+            .populate({
+                path: "subject",
+                select: "name code semester credits"
+            })
+            .populate({
+                path: "facultyAssignment",
+                select: "academicYear semester section"
+            }),
+        req.query
+    )
+        .sort()
+        .limitFields()
+        .paginate();
 
-        res.status(200).json({
-            count: marks.length,
-            marks
-        });
+    const marks = await features.query;
 
-    } catch (error) {
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Student marks fetched successfully",
+            marks,
+            marks.length
+        )
+    );
 
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
+});
 // Get Subject Marks
-const getSubjectMarks = async (req, res) => {
-    try {
+const getSubjectMarks = asyncHandler(async (req, res) => {
 
-        const { subjectId } = req.params;
+    const { subjectId } = req.params;
 
-        const marks = await Marks.find({
+    // Check Subject exists
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        throw new ApiError(404, "Subject not found");
+    }
+
+    const features = new APIFeatures(
+        Marks.find({
             subject: subjectId
         })
-        .populate({
-            path: "student",
-            select: "rollNumber",
-            populate: {
-                path: "user",
-                select: "name email"
-            }
-        })
-        .populate({
-            path: "facultyAssignment",
-            select: "academicYear semester section"
-        });
+            .populate({
+                path: "student",
+                select: "rollNumber",
+                populate: {
+                    path: "user",
+                    select: "name email"
+                }
+            })
+            .populate({
+                path: "facultyAssignment",
+                select: "academicYear semester section"
+            }),
+        req.query
+    )
+        .sort()
+        .limitFields()
+        .paginate();
 
-        res.status(200).json({
-            count: marks.length,
-            marks
-        });
+    const marks = await features.query;
 
-    } catch (error) {
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Subject marks fetched successfully",
+            marks,
+            marks.length
+        )
+    );
 
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
+});
 // Update Marks
-const updateMarks = async (req, res) => {
-    try {
+const updateMarks = asyncHandler(async (req, res) => {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const marks = await Marks.findById(id);
-
-        if (!marks) {
-            return res.status(404).json({
-                message: "Marks record not found"
-            });
+    const updatedMarks = await Marks.findByIdAndUpdate(
+        id,
+        req.body,
+        {
+            new: true,
+            runValidators: true
         }
+    );
 
-        const updatedMarks = await Marks.findByIdAndUpdate(
-            id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        res.status(200).json({
-            message: "Marks updated successfully",
-            marks: updatedMarks
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!updatedMarks) {
+        throw new ApiError(404, "Marks record not found");
     }
-};
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Marks updated successfully",
+            updatedMarks
+        )
+    );
+
+});
+
 // Delete Marks
-const deleteMarks = async (req, res) => {
-    try {
+const deleteMarks = asyncHandler(async (req, res) => {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const marks = await Marks.findById(id);
+    const deletedMarks = await Marks.findByIdAndDelete(id);
 
-        if (!marks) {
-            return res.status(404).json({
-                message: "Marks record not found"
-            });
-        }
-
-        await Marks.findByIdAndDelete(id);
-
-        res.status(200).json({
-            message: "Marks deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!deletedMarks) {
+        throw new ApiError(404, "Marks record not found");
     }
-};
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Marks deleted successfully",
+            null
+        )
+    );
+
+});
 // Get Marks Percentage
-const getMarksPercentage = async (req, res) => {
-    try {
+const getMarksPercentage = asyncHandler(async (req, res) => {
 
-        const { studentId, subjectId } = req.params;
+    const { studentId, subjectId } = req.params;
 
-        const marks = await Marks.find({
-            student: studentId,
-            subject: subjectId
-        });
+    // Check Student exists
+    const student = await Student.findById(studentId);
 
-        if (marks.length === 0) {
-            return res.status(404).json({
-                message: "No marks found"
-            });
-        }
-
-        const totalObtained = marks.reduce(
-            (sum, record) => sum + record.marksObtained,
-            0
-        );
-
-        const totalMaximum = marks.reduce(
-            (sum, record) => sum + record.totalMarks,
-            0
-        );
-
-        const percentage =
-            ((totalObtained / totalMaximum) * 100).toFixed(2);
-
-        res.status(200).json({
-            student: studentId,
-            subject: subjectId,
-            totalObtained,
-            totalMaximum,
-            percentage: `${percentage}%`
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!student) {
+        throw new ApiError(404, "Student not found");
     }
-};
+
+    // Check Subject exists
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        throw new ApiError(404, "Subject not found");
+    }
+
+    // Fetch Marks
+    const marks = await Marks.find({
+        student: studentId,
+        subject: subjectId
+    });
+
+    if (marks.length === 0) {
+        throw new ApiError(404, "No marks found");
+    }
+
+    // Calculate Total Obtained Marks
+    const totalObtained = marks.reduce(
+        (sum, record) => sum + record.marksObtained,
+        0
+    );
+
+    // Calculate Total Maximum Marks
+    const totalMaximum = marks.reduce(
+        (sum, record) => sum + record.totalMarks,
+        0
+    );
+
+    // Calculate Percentage
+    const percentage = (
+        (totalObtained / totalMaximum) * 100
+    ).toFixed(2);
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Marks percentage calculated successfully",
+            {
+                student: studentId,
+                subject: subjectId,
+                totalObtained,
+                totalMaximum,
+                percentage: `${percentage}%`
+            }
+        )
+    );
+
+});
 module.exports = {
     createMarks,
     getStudentMarks,

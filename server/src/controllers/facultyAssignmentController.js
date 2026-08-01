@@ -2,246 +2,320 @@ const FacultyAssignment = require("../models/FacultyAssignment");
 const Faculty = require("../models/Faculty");
 const Subject = require("../models/Subject");
 
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
+
+
 // Assign Faculty to Subject
-const assignFaculty = async (req, res) => {
-    try {
+const assignFaculty = asyncHandler(async (req, res) => {
 
-        const {
-            faculty,
-            subject,
-            academicYear,
-            semester,
-            section
-        } = req.body;
 
-        // Check faculty exists
-        const facultyExists = await Faculty.findById(faculty);
+    const {
+        faculty,
+        subject,
+        academicYear,
+        semester,
+        section
+    } = req.body;
 
-        if (!facultyExists) {
-            return res.status(404).json({
-                message: "Faculty not found"
-            });
-        }
 
-        // Check subject exists
-        const subjectExists = await Subject.findById(subject);
+    const facultyExists = await Faculty.findById(faculty);
 
-        if (!subjectExists) {
-            return res.status(404).json({
-                message: "Subject not found"
-            });
-        }
+    if (!facultyExists) {
 
-        // Prevent duplicate assignment
-        const existingAssignment = await FacultyAssignment.findOne({
-            faculty,
-            subject,
-            academicYear,
-            semester,
-            section
-        });
+        throw new ApiError(
+            404,
+            "Faculty not found"
+        );
 
-        if (existingAssignment) {
-            return res.status(400).json({
-                message: "Faculty is already assigned to this subject"
-            });
-        }
+    }
 
-        const assignment = await FacultyAssignment.create({
-            faculty,
-            subject,
-            academicYear,
-            semester,
-            section
-        });
 
-        res.status(201).json({
-            message: "Faculty assigned successfully",
+    const subjectExists = await Subject.findById(subject);
+
+    if (!subjectExists) {
+
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
+
+    }
+
+
+    const existingAssignment = await FacultyAssignment.findOne({
+
+        faculty,
+        subject,
+        academicYear,
+        semester,
+        section
+
+    });
+
+
+    if(existingAssignment){
+
+        throw new ApiError(
+            400,
+            "Faculty is already assigned to this subject"
+        );
+
+    }
+
+
+    const assignment = await FacultyAssignment.create({
+
+        faculty,
+        subject,
+        academicYear,
+        semester,
+        section
+
+    });
+
+
+    res.status(201).json(
+
+        new ApiResponse(
+            201,
+            "Faculty assigned successfully",
             assignment
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Get All Faculty Assignments
-const getAllAssignments = async (req, res) => {
-    try {
-
-        const assignments = await FacultyAssignment.find()
-
-            .populate({
-                path: "faculty",
-                select: "employeeId designation",
-                populate: {
-                    path: "user",
-                    select: "name email"
-                }
-            })
-
-            .populate({
-                path: "subject",
-                select: "name code semester"
-            });
-
-        res.status(200).json({
-            totalAssignments: assignments.length,
-            assignments
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Get Faculty Assignment By ID
-const getAssignmentById = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const assignment = await FacultyAssignment.findById(id)
-
-            .populate({
-                path: "faculty",
-                select: "employeeId designation",
-                populate: {
-                    path: "user",
-                    select: "name email"
-                }
-            })
-
-            .populate({
-                path: "subject",
-                select: "name code semester credits"
-            });
-
-        if (!assignment) {
-            return res.status(404).json({
-                message: "Assignment not found"
-            });
-        }
-
-        res.status(200).json({
-            assignment
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-// Update Faculty Assignment
-const updateAssignment = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const assignment = await FacultyAssignment.findById(id);
-
-        if (!assignment) {
-            return res.status(404).json({
-                message: "Assignment not found"
-            });
-        }
-
-        // If faculty is being updated, verify it exists
-        if (req.body.faculty) {
-
-            const faculty = await Faculty.findById(req.body.faculty);
-
-            if (!faculty) {
-                return res.status(404).json({
-                    message: "Faculty not found"
-                });
-            }
-        }
-
-        // If subject is being updated, verify it exists
-        if (req.body.subject) {
-
-            const subject = await Subject.findById(req.body.subject);
-
-            if (!subject) {
-                return res.status(404).json({
-                    message: "Subject not found"
-                });
-            }
-        }
-
-        const updatedAssignment = await FacultyAssignment.findByIdAndUpdate(
-            id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
         )
+
+    );
+
+
+});
+
+
+// Get All Assignments
+const getAllAssignments = asyncHandler(async(req,res)=>{
+
+
+    const features = new APIFeatures(
+
+        FacultyAssignment.find()
+
         .populate({
-            path: "faculty",
-            select: "employeeId designation",
-            populate: {
-                path: "user",
-                select: "name email"
+            path:"faculty",
+            select:"employeeId designation",
+            populate:{
+                path:"user",
+                select:"name email"
             }
         })
+
         .populate({
-            path: "subject",
-            select: "name code semester"
-        });
+            path:"subject",
+            select:"name code semester"
+        }),
 
-        res.status(200).json({
-            message: "Assignment updated successfully",
-            assignment: updatedAssignment
-        });
+        req.query
 
-    } catch (error) {
+    )
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
 
-        res.status(500).json({
-            message: error.message
-        });
+
+    const assignments = await features.query;
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Faculty assignments fetched successfully",
+            assignments,
+            assignments.length
+        )
+
+    );
+
+
+});
+
+
+// Get Assignment By ID
+const getAssignmentById = asyncHandler(async(req,res)=>{
+
+
+    const {id}=req.params;
+
+
+    const assignment = await FacultyAssignment.findById(id)
+
+    .populate({
+        path:"faculty",
+        select:"employeeId designation",
+        populate:{
+            path:"user",
+            select:"name email"
+        }
+    })
+
+    .populate({
+        path:"subject",
+        select:"name code semester credits"
+    });
+
+
+    if(!assignment){
+
+        throw new ApiError(
+            404,
+            "Assignment not found"
+        );
 
     }
-};
-// Delete Faculty Assignment
-const deleteAssignment = async (req, res) => {
-    try {
 
-        const { id } = req.params;
 
-        const assignment = await FacultyAssignment.findById(id);
+    res.status(200).json(
 
-        if (!assignment) {
-            return res.status(404).json({
-                message: "Assignment not found"
-            });
+        new ApiResponse(
+            200,
+            "Assignment fetched successfully",
+            assignment
+        )
+
+    );
+
+
+});
+
+
+// Update Assignment
+const updateAssignment = asyncHandler(async(req,res)=>{
+
+
+    const {id}=req.params;
+
+
+    const assignment = await FacultyAssignment.findById(id);
+
+
+    if(!assignment){
+
+        throw new ApiError(
+            404,
+            "Assignment not found"
+        );
+
+    }
+
+
+    if(req.body.faculty){
+
+        const faculty = await Faculty.findById(
+            req.body.faculty
+        );
+
+
+        if(!faculty){
+
+            throw new ApiError(
+                404,
+                "Faculty not found"
+            );
+
         }
 
-        await FacultyAssignment.findByIdAndDelete(id);
+    }
 
-        res.status(200).json({
-            message: "Assignment deleted successfully"
-        });
 
-    } catch (error) {
+    if(req.body.subject){
 
-        res.status(500).json({
-            message: error.message
-        });
+        const subject = await Subject.findById(
+            req.body.subject
+        );
+
+
+        if(!subject){
+
+            throw new ApiError(
+                404,
+                "Subject not found"
+            );
+
+        }
 
     }
-};
+
+
+    const updatedAssignment =
+    await FacultyAssignment.findByIdAndUpdate(
+
+        id,
+        req.body,
+
+        {
+            new:true,
+            runValidators:true
+        }
+
+    )
+    .populate("faculty")
+    .populate("subject");
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Assignment updated successfully",
+            updatedAssignment
+        )
+
+    );
+
+
+});
+
+
+// Delete Assignment
+const deleteAssignment = asyncHandler(async(req,res)=>{
+
+
+    const {id}=req.params;
+
+
+    const assignment =
+    await FacultyAssignment.findById(id);
+
+
+    if(!assignment){
+
+        throw new ApiError(
+            404,
+            "Assignment not found"
+        );
+
+    }
+
+
+    await FacultyAssignment.findByIdAndDelete(id);
+
+
+    res.status(200).json(
+
+        new ApiResponse(
+            200,
+            "Assignment deleted successfully",
+            null
+        )
+
+    );
+
+
+});
+
+
 module.exports = {
+
     assignFaculty,
     getAllAssignments,
     getAssignmentById,

@@ -13,6 +13,7 @@ const attendanceRoutes = require("./routes/attendanceRoutes");
 const marksRoutes = require("./routes/marksRoutes");
 const timetableRoutes = require("./routes/timetableRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
+const departmentRoutes = require("./routes/departmentRoutes");
 
 
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/enrollments",enrollmentRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/marks", marksRoutes);
 app.use("/api/timetable", timetableRoutes);
+app.use("/api/departments", departmentRoutes);
 // Test API
 app.get("/", (req, res) => {
     res.json({

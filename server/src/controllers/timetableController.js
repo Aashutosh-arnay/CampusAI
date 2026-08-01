@@ -1,103 +1,96 @@
 const Timetable = require("../models/Timetable");
 const Subject = require("../models/Subject");
 const FacultyAssignment = require("../models/FacultyAssignment");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
 
 // Create Timetable
-const createTimetable = async (req, res) => {
-    try {
+const createTimetable = asyncHandler(async (req, res) => {
 
-        const {
-            subject,
-            facultyAssignment,
-            day,
-            startTime,
-            endTime,
-            roomNumber,
-            academicYear,
-            semester,
-            section
-        } = req.body;
+    const {
+        subject,
+        facultyAssignment,
+        day,
+        startTime,
+        endTime,
+        roomNumber,
+        academicYear,
+        semester,
+        section
+    } = req.body;
 
-        // Check Subject
-        const subjectExists = await Subject.findById(subject);
+    // Check Subject
+    const subjectExists = await Subject.findById(subject);
 
-        if (!subjectExists) {
-            return res.status(404).json({
-                message: "Subject not found"
-            });
-        }
-
-        // Check Faculty Assignment
-        const assignmentExists = await FacultyAssignment.findById(facultyAssignment);
-
-        if (!assignmentExists) {
-            return res.status(404).json({
-                message: "Faculty Assignment not found"
-            });
-        }
-        // Check faculty timetable clash
-        const facultyClash = await Timetable.findOne({
-            facultyAssignment,
-            day,
-            startTime,
-            endTime
-        });
-
-        if (facultyClash) {
-            return res.status(400).json({
-                message: "Faculty already has a class at this time"
-            });
-        }
-
-        // Check room clash
-        const roomClash = await Timetable.findOne({
-            roomNumber,
-            day,
-            startTime,
-            endTime
-        });
-
-        if (roomClash) {
-            return res.status(400).json({
-                message: "Room is already occupied at this time"
-            });
-        }
-        const timetable = await Timetable.create({
-            subject,
-            facultyAssignment,
-            day,
-            startTime,
-            endTime,
-            roomNumber,
-            academicYear,
-            semester,
-            section
-        });
-
-        res.status(201).json({
-            message: "Timetable created successfully",
-            timetable
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!subjectExists) {
+        throw new ApiError(404, "Subject not found");
     }
-};
+
+    // Check Faculty Assignment
+    const assignmentExists = await FacultyAssignment.findById(facultyAssignment);
+
+    if (!assignmentExists) {
+        throw new ApiError(404, "Faculty Assignment not found");
+    }
+
+    // Check Faculty Timetable Clash
+    const facultyClash = await Timetable.findOne({
+        facultyAssignment,
+        day,
+        startTime,
+        endTime
+    });
+
+    if (facultyClash) {
+        throw new ApiError(400, "Faculty already has a class at this time");
+    }
+
+    // Check Room Clash
+    const roomClash = await Timetable.findOne({
+        roomNumber,
+        day,
+        startTime,
+        endTime
+    });
+
+    if (roomClash) {
+        throw new ApiError(400, "Room is already occupied at this time");
+    }
+
+    // Create Timetable
+    const timetable = await Timetable.create({
+        subject,
+        facultyAssignment,
+        day,
+        startTime,
+        endTime,
+        roomNumber,
+        academicYear,
+        semester,
+        section
+    });
+
+    res.status(201).json(
+        new ApiResponse(
+            201,
+            "Timetable created successfully",
+            timetable
+        )
+    );
+
+});
 // Get Timetable by Section
-const getSectionTimetable = async (req, res) => {
-    try {
+const getSectionTimetable = asyncHandler(async (req, res) => {
 
-        const { academicYear, semester, section } = req.params;
+    const { academicYear, semester, section } = req.params;
 
-        const timetable = await Timetable.find({
-            academicYear,
-            semester,
-            section
-        })
+    const timetable = await Timetable.find({
+        academicYear,
+        semester,
+        section
+    })
         .populate({
             path: "subject",
             select: "name code credits"
@@ -118,28 +111,31 @@ const getSectionTimetable = async (req, res) => {
             startTime: 1
         });
 
-        res.status(200).json({
-            count: timetable.length,
-            timetable
-        });
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Section timetable fetched successfully",
+            timetable,
+            timetable.length
+        )
+    );
 
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
+});
 // Get Faculty Timetable
-const getFacultyTimetable = async (req, res) => {
-    try {
+const getFacultyTimetable = asyncHandler(async (req, res) => {
 
-        const { facultyAssignmentId } = req.params;
+    const { facultyAssignmentId } = req.params;
 
-        const timetable = await Timetable.find({
-            facultyAssignment: facultyAssignmentId
-        })
+    // Check Faculty Assignment exists
+    const assignment = await FacultyAssignment.findById(facultyAssignmentId);
+
+    if (!assignment) {
+        throw new ApiError(404, "Faculty Assignment not found");
+    }
+
+    const timetable = await Timetable.find({
+        facultyAssignment: facultyAssignmentId
+    })
         .populate({
             path: "subject",
             select: "name code credits"
@@ -149,83 +145,63 @@ const getFacultyTimetable = async (req, res) => {
             startTime: 1
         });
 
-        res.status(200).json({
-            count: timetable.length,
-            timetable
-        });
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Faculty timetable fetched successfully",
+            timetable,
+            timetable.length
+        )
+    );
 
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
+});
 // Update Timetable
-const updateTimetable = async (req, res) => {
-    try {
+const updateTimetable = asyncHandler(async (req, res) => {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const timetable = await Timetable.findById(id);
-
-        if (!timetable) {
-            return res.status(404).json({
-                message: "Timetable not found"
-            });
+    const updatedTimetable = await Timetable.findByIdAndUpdate(
+        id,
+        req.body,
+        {
+            new: true,
+            runValidators: true
         }
+    );
 
-        const updatedTimetable = await Timetable.findByIdAndUpdate(
-            id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        res.status(200).json({
-            message: "Timetable updated successfully",
-            timetable: updatedTimetable
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!updatedTimetable) {
+        throw new ApiError(404, "Timetable not found");
     }
-};
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Timetable updated successfully",
+            updatedTimetable
+        )
+    );
+
+});
 // Delete Timetable
-const deleteTimetable = async (req, res) => {
-    try {
+const deleteTimetable = asyncHandler(async (req, res) => {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const timetable = await Timetable.findById(id);
+    const deletedTimetable = await Timetable.findByIdAndDelete(id);
 
-        if (!timetable) {
-            return res.status(404).json({
-                message: "Timetable not found"
-            });
-        }
-
-        await Timetable.findByIdAndDelete(id);
-
-        res.status(200).json({
-            message: "Timetable deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!deletedTimetable) {
+        throw new ApiError(404, "Timetable not found");
     }
-};
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Timetable deleted successfully",
+            null
+        )
+    );
+
+});
 module.exports = {
     createTimetable,
     getSectionTimetable,

@@ -2,123 +2,125 @@ const Student = require("../models/Student");
 const Faculty = require("../models/Faculty");
 const User = require("../models/User");
 
-const getAllStudents = async (req, res) => {
-
-    try {
-
-        const students = await Student.find()
-            .populate("user", "name email role");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
+const APIFeatures = require("../utils/apiFeatures");
+const ApiResponse = require("../utils/apiResponse");
 
 
-        res.status(200).json({
-            students
-        });
+// Get All Students
+const getAllStudents = asyncHandler(async (req, res) => {
+
+    const features = new APIFeatures(
+        Student.find()
+            .populate("user", "name email role"),
+        req.query
+    )
+    .filter()
+    .search(["rollNumber"])
+    .sort()
+    .limitFields()
+    .paginate();
+
+    const students = await features.query;
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Students fetched successfully",
+            students,
+            students.length
+        )
+    );
+
+});
 
 
-    } catch (error) {
+// Get All Faculty
+const getAllFaculty = asyncHandler(async (req, res) => {
 
-        res.status(500).json({
-            message: error.message
-        });
+    const features = new APIFeatures(
+        Faculty.find()
+            .populate("user", "name email role"),
+        req.query
+    )
+    .filter()
+    .search(["employeeId"])
+    .sort()
+    .limitFields()
+    .paginate();
 
+    const faculty = await features.query;
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Faculty fetched successfully",
+            faculty,
+            faculty.length
+        )
+    );
+
+});
+
+
+// Delete Student
+const deleteStudent = asyncHandler(async (req, res) => {
+
+    const student = await Student.findById(req.params.id);
+
+    if (!student) {
+        throw new ApiError(
+            404,
+            "Student not found"
+        );
     }
 
-};
+    await User.findByIdAndDelete(student.user);
 
-const getAllFaculty = async (req, res) => {
+    await Student.findByIdAndDelete(req.params.id);
 
-    try {
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Student deleted successfully",
+            null
+        )
+    );
 
-        const faculty = await Faculty.find()
-            .populate("user", "name email role");
+});
 
 
-        res.status(200).json({
-            faculty
-        });
+// Delete Faculty
+const deleteFaculty = asyncHandler(async (req, res) => {
 
+    const faculty = await Faculty.findById(req.params.id);
 
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!faculty) {
+        throw new ApiError(
+            404,
+            "Faculty not found"
+        );
     }
 
-};
-const deleteStudent = async (req, res) => {
+    await User.findByIdAndDelete(faculty.user);
 
-    try {
+    await Faculty.findByIdAndDelete(req.params.id);
 
-        const student = await Student.findById(req.params.id);
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Faculty deleted successfully",
+            null
+        )
+    );
 
-
-        if (!student) {
-            return res.status(404).json({
-                message: "Student not found"
-            });
-        }
-
-
-        await User.findByIdAndDelete(student.user);
-
-        await Student.findByIdAndDelete(req.params.id);
-
-
-        res.status(200).json({
-            message: "Student deleted successfully"
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
-const deleteFaculty = async (req, res) => {
-
-    try {
-
-        const faculty = await Faculty.findById(req.params.id);
-
-
-        if (!faculty) {
-            return res.status(404).json({
-                message: "Faculty not found"
-            });
-        }
-
-
-        await User.findByIdAndDelete(faculty.user);
-
-        await Faculty.findByIdAndDelete(req.params.id);
-
-
-        res.status(200).json({
-            message: "Faculty deleted successfully"
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-
-};
+});
 
 
 module.exports = {
     getAllStudents,
     getAllFaculty,
     deleteStudent,
-    deleteFaculty 
-
+    deleteFaculty
 };
