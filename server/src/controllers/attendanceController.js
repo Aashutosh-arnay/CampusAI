@@ -490,7 +490,6 @@ const getAllAttendance = asyncHandler(async (req, res) => {
 
 
 });
-
 module.exports = {
     markAttendance,
     getStudentAttendance,
@@ -498,8 +497,7 @@ module.exports = {
     updateAttendance,
     deleteAttendance,
     getAttendancePercentage,
-    getAllAttendance
-    
+    getAllAttendance 
 };
 
 

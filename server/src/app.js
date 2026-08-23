@@ -1,5 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("@exortek/express-mongo-sanitize");
+const xssMiddleware = require("./middleware/xssMiddleware");
+const morgan = require("morgan");
+
 
 const authRoutes = require("./routes/authRoutes");
 const studentRoutes = require("./routes/studentRoutes");
@@ -14,13 +20,37 @@ const marksRoutes = require("./routes/marksRoutes");
 const timetableRoutes = require("./routes/timetableRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const departmentRoutes = require("./routes/departmentRoutes");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 
 
 const app = express();
-
-app.use(cors());
-app.use(express.json());
-
+app.disable("x-powered-by");
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(helmet());
+app.use(limiter);
+app.use(
+    cors({
+        origin: process.env.CLIENT_URL || "http://localhost:5173"
+    })
+);
+app.use(express.json({ limit: "10kb" }));
+app.use(mongoSanitize());
+app.use(xssMiddleware);
+app.use(
+    morgan("dev", {
+        stream: {
+            write: (message) => {
+                console.log("MORGAN:", message.trim());
+            }
+        }
+    })
+);
 
 // Auth Routes
 app.use("/api/auth", authRoutes);
@@ -41,6 +71,12 @@ app.get("/", (req, res) => {
         message: "CampusAI Backend Running 🚀"
     });
 });
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
+
 app.use(errorMiddleware);
 
 module.exports = app;

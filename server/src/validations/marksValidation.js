@@ -2,11 +2,17 @@ const { body } = require("express-validator");
 
 const createMarksValidation = [
 
-    body("enrollment")
+    body("student")
         .notEmpty()
-        .withMessage("Enrollment ID is required")
+        .withMessage("Student ID is required")
         .isMongoId()
-        .withMessage("Invalid Enrollment ID"),
+        .withMessage("Invalid Student ID"),
+
+    body("subject")
+        .notEmpty()
+        .withMessage("Subject ID is required")
+        .isMongoId()
+        .withMessage("Invalid Subject ID"),
 
     body("facultyAssignment")
         .notEmpty()
@@ -18,13 +24,27 @@ const createMarksValidation = [
         .isFloat({ min: 0 })
         .withMessage("Marks Obtained must be a positive number"),
 
-    body("maxMarks")
+    body("totalMarks")
         .isFloat({ min: 1 })
-        .withMessage("Maximum Marks must be greater than 0"),
+        .withMessage("Total Marks must be greater than 0"),
 
     body("examType")
         .notEmpty()
         .withMessage("Exam Type is required")
+        .isIn([
+            "Quiz",
+            "Midterm",
+            "End Semester",
+            "Assignment",
+            "Lab"
+        ])
+        .withMessage(
+            "Exam Type must be Quiz, Midterm, End Semester, Assignment, or Lab"
+        ),
+
+    body("remarks")
+        .optional()
+        .trim()
 
 ];
 

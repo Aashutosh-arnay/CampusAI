@@ -1,14 +1,10 @@
-const Student = require("../models/Student");
-const Faculty = require("../models/Faculty");
 const User = require("../models/User");
-
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/AppError");
 const ApiResponse = require("../utils/apiResponse");
-
 
 // REGISTER API
 const registerUser = asyncHandler(async (req, res) => {
@@ -17,32 +13,27 @@ const registerUser = asyncHandler(async (req, res) => {
         name,
         email,
         password,
-        role,
-        rollNumber,
-        semester,
-        employeeId,
-        designation,
-        department
+        role
     } = req.body;
 
-
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
-
 
     if (existingUser) {
         throw new ApiError(
             400,
             "User already exists"
+           
         );
     }
 
-
+    // Hash password
     const hashedPassword = await bcrypt.hash(
         password,
         10
     );
 
-
+    // Create User
     const user = await User.create({
 
         name,
@@ -51,35 +42,6 @@ const registerUser = asyncHandler(async (req, res) => {
         role
 
     });
-
-
-    if (role === "student") {
-
-        await Student.create({
-
-            user: user._id,
-            rollNumber,
-            department,
-            semester
-
-        });
-
-    }
-
-
-    if (role === "faculty") {
-
-        await Faculty.create({
-
-            user: user._id,
-            employeeId,
-            department,
-            designation
-
-        });
-
-    }
-
 
     res.status(201).json(
 
@@ -90,12 +52,10 @@ const registerUser = asyncHandler(async (req, res) => {
             "User registered successfully",
 
             {
-
                 id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role
-
             }
 
         )
@@ -103,7 +63,6 @@ const registerUser = asyncHandler(async (req, res) => {
     );
 
 });
-
 
 
 // LOGIN API
@@ -114,58 +73,50 @@ const loginUser = asyncHandler(async (req, res) => {
         password
     } = req.body;
 
-
-    const user = await User.findOne({ email });
-
+    // Find User
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
 
         throw new ApiError(
             404,
             "User not found"
+            
         );
 
     }
 
-
+    // Check password
     const isPasswordCorrect = await bcrypt.compare(
-
         password,
-
         user.password
-
     );
-
 
     if (!isPasswordCorrect) {
 
         throw new ApiError(
             400,
             "Invalid password"
+            
         );
 
     }
 
-
+    // Generate JWT
     const token = jwt.sign(
 
         {
-
             id: user._id,
             role: user.role
-
         },
 
         process.env.JWT_SECRET,
 
         {
-
             expiresIn: "1d"
-
         }
 
     );
-
 
     res.status(200).json(
 
@@ -176,18 +127,14 @@ const loginUser = asyncHandler(async (req, res) => {
             "Login successful",
 
             {
-
                 token,
 
                 user: {
-
                     id: user._id,
                     name: user.name,
                     email: user.email,
                     role: user.role
-
                 }
-
             }
 
         )
@@ -197,10 +144,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 
-
 module.exports = {
-
     registerUser,
     loginUser
-
 };

@@ -1,3 +1,4 @@
+const logger = require("../utils/logger");
 const errorMiddleware = (err, req, res, next) => {
 
     // Invalid MongoDB ObjectId
@@ -36,15 +37,36 @@ const errorMiddleware = (err, req, res, next) => {
         });
     }
 
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || "error";
+    const statusCode = err.statusCode || 500;
+    const status = err.status || "error";
 
-    res.status(err.statusCode).json({
+    if (!err.isOperational) {
+        logger.error("Unexpected application error", {
+            error: err.message,
+            stack: err.stack
+        });
+        const statusCode =
+            err.statusCode && err.statusCode >= 400 && err.statusCode < 500
+                ? err.statusCode
+                : 500;
+
+        return res.status(statusCode).json({
+            success: false,
+            statusCode,
+            status: statusCode >= 500 ? "error" : "fail",
+            message:
+                statusCode === 400
+                    ? "Invalid request"
+                    : "Internal Server Error"
+        });
+    }
+
+    return res.status(statusCode).json({
         success: false,
-        statusCode: err.statusCode,
-        message: err.message || "Internal Server Error"
+        statusCode,
+        status,
+        message: err.message || "An error occurred"
     });
-
 };
 
 module.exports = errorMiddleware;

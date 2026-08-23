@@ -22,7 +22,8 @@ const createSubject = asyncHandler(async (req, res) => {
     if (existingSubject) {
         throw new ApiError(
             400,
-            "Subject already exists"
+            "Subject already exists",
+            
         );
     }
 
@@ -100,15 +101,7 @@ const updateSubject = asyncHandler(async (req, res) => {
 
     const { id } = req.params;
 
-    const subject = await Subject.findById(id);
-
-    if (!subject) {
-        throw new ApiError(
-            404,
-            "Subject not found"
-        );
-    }
-
+    // Check duplicate subject code
     if (req.body.code) {
 
         const existingSubject = await Subject.findOne({
@@ -131,8 +124,17 @@ const updateSubject = asyncHandler(async (req, res) => {
             new: true,
             runValidators: true
         }
-    )
-    .populate("course", "name code -_id");
+    ).populate(
+        "course",
+        "name code -_id"
+    );
+
+    if (!updatedSubject) {
+        throw new ApiError(
+            404,
+            "Subject not found"
+        );
+    }
 
     res.status(200).json(
         new ApiResponse(
@@ -150,16 +152,14 @@ const deleteSubject = asyncHandler(async (req, res) => {
 
     const { id } = req.params;
 
-    const subject = await Subject.findById(id);
+    const deletedSubject = await Subject.findByIdAndDelete(id);
 
-    if (!subject) {
+    if (!deletedSubject) {
         throw new ApiError(
             404,
             "Subject not found"
         );
     }
-
-    await Subject.findByIdAndDelete(id);
 
     res.status(200).json(
         new ApiResponse(

@@ -9,26 +9,28 @@ const createStudentProfile = asyncHandler(async (req, res) => {
 
     const {
         rollNumber,
-        department,
         semester,
+        department,
+        course,
+        section,
         skills,
         cgpa,
         phone
     } = req.body;
 
-
     const student = await Student.create({
 
         user: req.user.id,
         rollNumber,
-        department,
         semester,
+        department,
+        course,
+        section,
         skills,
         cgpa,
         phone
 
     });
-
 
     res.status(201).json(
         new ApiResponse(
@@ -37,7 +39,6 @@ const createStudentProfile = asyncHandler(async (req, res) => {
             student
         )
     );
-
 });
 
 
@@ -49,7 +50,9 @@ const getStudentProfile = asyncHandler(async (req, res) => {
         user: req.user.id
     })
     .populate("user", "name email role -_id")
-    .populate("department", "name code -_id");
+    .populate("department", "name code -_id")
+     .populate("course", "name code -_id");
+
 
 
     if (!student) {
@@ -76,6 +79,13 @@ const getStudentProfile = asyncHandler(async (req, res) => {
 // Update Student Profile
 const updateStudentProfile = asyncHandler(async (req, res) => {
 
+    const {
+        semester,
+        section,
+        skills,
+        cgpa,
+        phone
+    } = req.body;
 
     const student = await Student.findOneAndUpdate(
 
@@ -83,15 +93,20 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
             user: req.user.id
         },
 
-        req.body,
+        {
+            semester,
+            section,
+            skills,
+            cgpa,
+            phone
+        },
 
         {
-            new:true,
-            runValidators:true
+            new: true,
+            runValidators: true
         }
 
     );
-
 
     if (!student) {
 
@@ -102,7 +117,6 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 
     }
 
-
     res.status(200).json(
         new ApiResponse(
             200,
@@ -110,9 +124,7 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
             student
         )
     );
-
 });
-
 
 // Delete Student Profile
 const deleteStudentProfile = asyncHandler(async (req,res)=>{

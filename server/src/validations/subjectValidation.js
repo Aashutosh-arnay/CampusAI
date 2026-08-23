@@ -12,6 +12,12 @@ const createSubjectValidation = [
         .notEmpty()
         .withMessage("Subject code is required"),
 
+    body("course")
+        .notEmpty()
+        .withMessage("Course is required")
+        .isMongoId()
+        .withMessage("Invalid course ID"),
+
     body("semester")
         .isInt({ min: 1, max: 8 })
         .withMessage("Semester must be between 1 and 8"),

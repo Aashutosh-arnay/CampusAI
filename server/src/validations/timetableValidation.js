@@ -27,6 +27,11 @@ const createTimetableValidation = [
         .trim()
         .notEmpty()
         .withMessage("Section is required"),
+        
+    body("roomNumber")
+        .trim()
+        .notEmpty()
+        .withMessage("Room number is required"),
 
     body("day")
         .isIn([

@@ -3,6 +3,7 @@ const Student = require("../models/Student");
 const Subject = require("../models/Subject");
 const FacultyAssignment = require("../models/FacultyAssignment");
 const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/AppError");
 const APIFeatures = require("../utils/apiFeatures");
 const ApiResponse = require("../utils/apiResponse");
 

@@ -13,7 +13,8 @@ const getFacultyProfile = asyncHandler(async (req, res) => {
         user: req.user.id
 
     })
-    .populate("user", "name email role");
+    .populate("user", "name email role")
+    .populate("department", "name code -_id");
 
 
     if (!faculty) {

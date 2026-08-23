@@ -189,16 +189,14 @@ const getAssignmentById = asyncHandler(async(req,res)=>{
 
 
 // Update Assignment
-const updateAssignment = asyncHandler(async(req,res)=>{
+// Update Assignment
+const updateAssignment = asyncHandler(async (req, res) => {
 
-
-    const {id}=req.params;
-
+    const { id } = req.params;
 
     const assignment = await FacultyAssignment.findById(id);
 
-
-    if(!assignment){
+    if (!assignment) {
 
         throw new ApiError(
             404,
@@ -207,15 +205,21 @@ const updateAssignment = asyncHandler(async(req,res)=>{
 
     }
 
+    // Values after update
+    const faculty = req.body.faculty ?? assignment.faculty;
+    const subject = req.body.subject ?? assignment.subject;
+    const academicYear = req.body.academicYear ?? assignment.academicYear;
+    const semester = req.body.semester ?? assignment.semester;
+    const section = req.body.section ?? assignment.section;
 
-    if(req.body.faculty){
+    // Check faculty exists
+    if (req.body.faculty) {
 
-        const faculty = await Faculty.findById(
+        const facultyExists = await Faculty.findById(
             req.body.faculty
         );
 
-
-        if(!faculty){
+        if (!facultyExists) {
 
             throw new ApiError(
                 404,
@@ -226,15 +230,14 @@ const updateAssignment = asyncHandler(async(req,res)=>{
 
     }
 
+    // Check subject exists
+    if (req.body.subject) {
 
-    if(req.body.subject){
-
-        const subject = await Subject.findById(
+        const subjectExists = await Subject.findById(
             req.body.subject
         );
 
-
-        if(!subject){
+        if (!subjectExists) {
 
             throw new ApiError(
                 404,
@@ -245,22 +248,45 @@ const updateAssignment = asyncHandler(async(req,res)=>{
 
     }
 
+    // Check for duplicate assignment
+    const existingAssignment =
+        await FacultyAssignment.findOne({
+
+            faculty,
+            subject,
+            academicYear,
+            semester,
+            section,
+
+            _id: {
+                $ne: id
+            }
+
+        });
+
+    if (existingAssignment) {
+
+        throw new ApiError(
+            400,
+            "Faculty is already assigned to this subject"
+        );
+
+    }
 
     const updatedAssignment =
-    await FacultyAssignment.findByIdAndUpdate(
+        await FacultyAssignment.findByIdAndUpdate(
 
-        id,
-        req.body,
+            id,
+            req.body,
 
-        {
-            new:true,
-            runValidators:true
-        }
+            {
+                new: true,
+                runValidators: true
+            }
 
-    )
-    .populate("faculty")
-    .populate("subject");
-
+        )
+        .populate("faculty")
+        .populate("subject");
 
     res.status(200).json(
 
@@ -272,10 +298,7 @@ const updateAssignment = asyncHandler(async(req,res)=>{
 
     );
 
-
 });
-
-
 // Delete Assignment
 const deleteAssignment = asyncHandler(async(req,res)=>{
 

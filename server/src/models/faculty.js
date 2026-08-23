@@ -15,21 +15,15 @@ const facultySchema = new mongoose.Schema({
         unique: true
     },
 
-    department: {
-        type: String,
-        required: true
-    },
-
+        department: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Department",
+            required: true
+        },
     designation: {
         type: String,
         required: true
     },
-
-    subjects: [
-        {
-            type: String
-        }
-    ],
 
     phone: {
         type: String
