@@ -1,4 +1,5 @@
 const loginLimiter = require("../config/loginLimiter");
+const logger = require("../utils/logger");
 
 const loginRateLimiter = async (req, res, next) => {
     const key = `${req.ip}:${req.body.email || "unknown"}`;
@@ -24,7 +25,10 @@ const loginRateLimiter = async (req, res, next) => {
             try {
                 await loginLimiter.delete(key);
             } catch (error) {
-                console.error("Failed to reset login limiter:", error.message);
+                logger.error("Failed to reset login limiter", {
+                    error: error.message,
+                    stack: error.stack
+                });
             }
         }
     });

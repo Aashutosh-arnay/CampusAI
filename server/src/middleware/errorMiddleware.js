@@ -1,17 +1,21 @@
 const logger = require("../utils/logger");
+
 const errorMiddleware = (err, req, res, next) => {
 
     // Invalid MongoDB ObjectId
     if (err.name === "CastError") {
+
         return res.status(400).json({
             success: false,
             status: "fail",
             message: "Invalid ID"
         });
+
     }
 
     // Duplicate Key Error
     if (err.code === 11000) {
+
         const field = Object.keys(err.keyValue)[0];
 
         return res.status(400).json({
@@ -19,6 +23,7 @@ const errorMiddleware = (err, req, res, next) => {
             status: "fail",
             message: `${field} already exists`
         });
+
     }
 
     // Mongoose Validation Error
@@ -35,38 +40,45 @@ const errorMiddleware = (err, req, res, next) => {
             message: "Validation failed",
             errors
         });
+
     }
 
     const statusCode = err.statusCode || 500;
     const status = err.status || "error";
 
+    // Unexpected application error
     if (!err.isOperational) {
+
         logger.error("Unexpected application error", {
             error: err.message,
             stack: err.stack
         });
-        const statusCode =
-            err.statusCode && err.statusCode >= 400 && err.statusCode < 500
-                ? err.statusCode
+
+        const safeStatusCode =
+            statusCode >= 400 && statusCode < 500
+                ? statusCode
                 : 500;
 
-        return res.status(statusCode).json({
+        return res.status(safeStatusCode).json({
             success: false,
-            statusCode,
-            status: statusCode >= 500 ? "error" : "fail",
+            statusCode: safeStatusCode,
+            status: safeStatusCode >= 500 ? "error" : "fail",
             message:
-                statusCode === 400
+                safeStatusCode === 400
                     ? "Invalid request"
                     : "Internal Server Error"
         });
+
     }
 
+    // Operational application error
     return res.status(statusCode).json({
         success: false,
         statusCode,
         status,
         message: err.message || "An error occurred"
     });
+
 };
 
 module.exports = errorMiddleware;

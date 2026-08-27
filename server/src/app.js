@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("@exortek/express-mongo-sanitize");
 const xssMiddleware = require("./middleware/xssMiddleware");
 const morgan = require("morgan");
+const logger = require("./utils/logger");
 const { config } = require("./config/env");
 
 
@@ -44,13 +45,21 @@ app.use(express.json({ limit: "10kb" }));
 app.use(mongoSanitize());
 app.use(xssMiddleware);
 app.use(
+
     morgan("dev", {
+
         stream: {
+
             write: (message) => {
-                console.log("MORGAN:", message.trim());
+
+                logger.info(message.trim());
+
             }
+
         }
+
     })
+
 );
 
 // Auth Routes
