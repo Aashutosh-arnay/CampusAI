@@ -11,7 +11,6 @@ const ApiResponse = require("../utils/apiResponse");
 // Assign Faculty to Subject
 const assignFaculty = asyncHandler(async (req, res) => {
 
-
     const {
         faculty,
         subject,
@@ -19,7 +18,6 @@ const assignFaculty = asyncHandler(async (req, res) => {
         semester,
         section
     } = req.body;
-
 
     const facultyExists = await Faculty.findById(faculty);
 
@@ -32,7 +30,6 @@ const assignFaculty = asyncHandler(async (req, res) => {
 
     }
 
-
     const subjectExists = await Subject.findById(subject);
 
     if (!subjectExists) {
@@ -44,7 +41,6 @@ const assignFaculty = asyncHandler(async (req, res) => {
 
     }
 
-
     const existingAssignment = await FacultyAssignment.findOne({
 
         faculty,
@@ -55,8 +51,7 @@ const assignFaculty = asyncHandler(async (req, res) => {
 
     });
 
-
-    if(existingAssignment){
+    if (existingAssignment) {
 
         throw new ApiError(
             400,
@@ -64,7 +59,6 @@ const assignFaculty = asyncHandler(async (req, res) => {
         );
 
     }
-
 
     const assignment = await FacultyAssignment.create({
 
@@ -76,7 +70,6 @@ const assignFaculty = asyncHandler(async (req, res) => {
 
     });
 
-
     res.status(201).json(
 
         new ApiResponse(
@@ -87,43 +80,39 @@ const assignFaculty = asyncHandler(async (req, res) => {
 
     );
 
-
 });
 
 
 // Get All Assignments
-const getAllAssignments = asyncHandler(async(req,res)=>{
-
+const getAllAssignments = asyncHandler(async (req, res) => {
 
     const features = new APIFeatures(
 
         FacultyAssignment.find()
 
-        .populate({
-            path:"faculty",
-            select:"employeeId designation",
-            populate:{
-                path:"user",
-                select:"name email"
-            }
-        })
+            .populate({
+                path: "faculty",
+                select: "employeeId designation",
+                populate: {
+                    path: "user",
+                    select: "name email"
+                }
+            })
 
-        .populate({
-            path:"subject",
-            select:"name code semester"
-        }),
+            .populate({
+                path: "subject",
+                select: "name code semester"
+            }),
 
         req.query
 
     )
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
-
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate();
 
     const assignments = await features.query;
-
 
     res.status(200).json(
 
@@ -136,35 +125,31 @@ const getAllAssignments = asyncHandler(async(req,res)=>{
 
     );
 
-
 });
 
 
 // Get Assignment By ID
-const getAssignmentById = asyncHandler(async(req,res)=>{
+const getAssignmentById = asyncHandler(async (req, res) => {
 
-
-    const {id}=req.params;
-
+    const { id } = req.params;
 
     const assignment = await FacultyAssignment.findById(id)
 
-    .populate({
-        path:"faculty",
-        select:"employeeId designation",
-        populate:{
-            path:"user",
-            select:"name email"
-        }
-    })
+        .populate({
+            path: "faculty",
+            select: "employeeId designation",
+            populate: {
+                path: "user",
+                select: "name email"
+            }
+        })
 
-    .populate({
-        path:"subject",
-        select:"name code semester credits"
-    });
+        .populate({
+            path: "subject",
+            select: "name code semester credits"
+        });
 
-
-    if(!assignment){
+    if (!assignment) {
 
         throw new ApiError(
             404,
@@ -172,7 +157,6 @@ const getAssignmentById = asyncHandler(async(req,res)=>{
         );
 
     }
-
 
     res.status(200).json(
 
@@ -184,11 +168,9 @@ const getAssignmentById = asyncHandler(async(req,res)=>{
 
     );
 
-
 });
 
 
-// Update Assignment
 // Update Assignment
 const updateAssignment = asyncHandler(async (req, res) => {
 
@@ -208,9 +190,12 @@ const updateAssignment = asyncHandler(async (req, res) => {
     // Values after update
     const faculty = req.body.faculty ?? assignment.faculty;
     const subject = req.body.subject ?? assignment.subject;
-    const academicYear = req.body.academicYear ?? assignment.academicYear;
-    const semester = req.body.semester ?? assignment.semester;
-    const section = req.body.section ?? assignment.section;
+    const academicYear =
+        req.body.academicYear ?? assignment.academicYear;
+    const semester =
+        req.body.semester ?? assignment.semester;
+    const section =
+        req.body.section ?? assignment.section;
 
     // Check faculty exists
     if (req.body.faculty) {
@@ -285,8 +270,18 @@ const updateAssignment = asyncHandler(async (req, res) => {
             }
 
         )
-        .populate("faculty")
-        .populate("subject");
+            .populate({
+                path: "faculty",
+                select: "employeeId designation",
+                populate: {
+                    path: "user",
+                    select: "name email"
+                }
+            })
+            .populate({
+                path: "subject",
+                select: "name code semester credits"
+            });
 
     res.status(200).json(
 
@@ -299,18 +294,17 @@ const updateAssignment = asyncHandler(async (req, res) => {
     );
 
 });
+
+
 // Delete Assignment
-const deleteAssignment = asyncHandler(async(req,res)=>{
+const deleteAssignment = asyncHandler(async (req, res) => {
 
-
-    const {id}=req.params;
-
+    const { id } = req.params;
 
     const assignment =
-    await FacultyAssignment.findById(id);
+        await FacultyAssignment.findById(id);
 
-
-    if(!assignment){
+    if (!assignment) {
 
         throw new ApiError(
             404,
@@ -319,9 +313,7 @@ const deleteAssignment = asyncHandler(async(req,res)=>{
 
     }
 
-
     await FacultyAssignment.findByIdAndDelete(id);
-
 
     res.status(200).json(
 
@@ -332,7 +324,6 @@ const deleteAssignment = asyncHandler(async(req,res)=>{
         )
 
     );
-
 
 });
 

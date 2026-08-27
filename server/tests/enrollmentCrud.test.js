@@ -21,8 +21,6 @@ const {
     clearTestDB
 } = require("./setup");
 
-process.env.JWT_SECRET = "test-secret";
-
 const studentToken = jwt.sign(
     {
         id: new mongoose.Types.ObjectId().toString(),

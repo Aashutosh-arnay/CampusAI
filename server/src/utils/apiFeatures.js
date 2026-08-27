@@ -7,26 +7,73 @@ class APIFeatures {
 
     filter() {
 
-        // Copy query object
         const queryObj = { ...this.queryString };
 
-        // Fields to exclude
-        const excludedFields = ["page", "sort", "limit", "fields", "search"];
+        const excludedFields = [
+            "page",
+            "sort",
+            "limit",
+            "fields",
+            "search"
+        ];
 
-        excludedFields.forEach(field => delete queryObj[field]);
+        excludedFields.forEach(field => {
+            delete queryObj[field];
+        });
 
-        // Advanced filtering
-        let queryStr = JSON.stringify(queryObj);
+        const allowedOperators = new Set([
+            "gte",
+            "gt",
+            "lte",
+            "lt",
+            "in"
+        ]);
 
-        queryStr = queryStr.replace(
-            /\b(gte|gt|lte|lt|in)\b/g,
-            match => `$${match}`
-        );
+        const sanitizeFilter = (value) => {
 
-        this.query = this.query.find(JSON.parse(queryStr));
+            if (Array.isArray(value)) {
+                return value.map(sanitizeFilter);
+            }
+
+            if (value && typeof value === "object") {
+
+                const sanitized = {};
+
+                for (const [key, nestedValue] of Object.entries(value)) {
+
+                    // Reject MongoDB operators and dangerous keys
+                    if (
+                        key.startsWith("$") ||
+                        key.includes(".")
+                    ) {
+                        continue;
+                    }
+
+                    if (allowedOperators.has(key)) {
+
+                        sanitized[`$${key}`] =
+                            sanitizeFilter(nestedValue);
+
+                    } else {
+
+                        sanitized[key] =
+                            sanitizeFilter(nestedValue);
+
+                    }
+
+                }
+
+                return sanitized;
+            }
+
+            return value;
+        };
+
+        const safeFilters = sanitizeFilter(queryObj);
+
+        this.query = this.query.find(safeFilters);
 
         return this;
-
     }
     search(fields) {
 
@@ -34,10 +81,15 @@ class APIFeatures {
 
             const keyword = this.queryString.search;
 
+            const escapedKeyword = keyword.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                "\\$&"
+            );
+
             this.query = this.query.find({
                 $or: fields.map(field => ({
                     [field]: {
-                        $regex: keyword,
+                        $regex: escapedKeyword,
                         $options: "i"
                     }
                 }))
@@ -46,15 +98,36 @@ class APIFeatures {
         }
 
         return this;
-
     }
     sort() {
 
         if (this.queryString.sort) {
 
-            const sortBy = this.queryString.sort.split(",").join(" ");
+            const sortFields = this.queryString.sort
+                .split(",")
+                .map(field => field.trim())
+                .filter(Boolean);
 
-            this.query = this.query.sort(sortBy);
+            const validSortFields = sortFields.filter(field => {
+                const fieldName = field.startsWith("-")
+                    ? field.slice(1)
+                    : field;
+
+                return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(fieldName);
+            });
+
+            if (validSortFields.length > 0) {
+
+                const sortBy = validSortFields
+                    .join(" ");
+
+                this.query = this.query.sort(sortBy);
+
+            } else {
+
+                this.query = this.query.sort("-createdAt");
+
+            }
 
         } else {
 
@@ -63,29 +136,60 @@ class APIFeatures {
         }
 
         return this;
-
     }
     paginate() {
 
-        const page = Number(this.queryString.page) || 1;
-        const limit = Number(this.queryString.limit) || 10;
+        const page = Math.max(
+            Number(this.queryString.page) || 1,
+            1
+        );
+
+        const requestedLimit = Number(
+            this.queryString.limit
+        ) || 10;
+
+        const limit = Math.min(
+            Math.max(requestedLimit, 1),
+            100
+        );
 
         const skip = (page - 1) * limit;
 
-        this.query = this.query.skip(skip).limit(limit);
+        this.query = this.query
+            .skip(skip)
+            .limit(limit);
 
         return this;
-
     }
-        limitFields() {
+    limitFields() {
 
         if (this.queryString.fields) {
 
-            const fields = this.queryString.fields
+            const requestedFields = this.queryString.fields
                 .split(",")
-                .join(" ");
+                .map(field => field.trim())
+                .filter(Boolean);
 
-            this.query = this.query.select(fields);
+            const blockedFields = [
+                "password",
+                "+password"
+            ];
+
+            const safeFields = requestedFields.filter(
+                field => !blockedFields.includes(field)
+            );
+
+            if (safeFields.length > 0) {
+
+                const fields = safeFields.join(" ");
+
+                this.query = this.query.select(fields);
+
+            } else {
+
+                this.query = this.query.select("-__v");
+
+            }
 
         } else {
 
@@ -94,7 +198,6 @@ class APIFeatures {
         }
 
         return this;
-
     }
 
 }

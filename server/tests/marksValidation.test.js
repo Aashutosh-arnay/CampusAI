@@ -6,8 +6,6 @@ const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const app = require("../src/app");
 
-process.env.JWT_SECRET = "test-secret";
-
 const facultyToken = jwt.sign(
     {
         id: "test-faculty-id",

@@ -65,4 +65,34 @@ describe("Authentication APIs", () => {
 
         expect(response.statusCode).toBe(400);
     });
+
+    test("POST /api/auth/register should reject admin role", async () => {
+        const response = await request(app)
+            .post("/api/auth/register")
+            .send({
+                name: "Test Admin",
+                email: "admin@example.com",
+                password: "password123",
+                role: "admin"
+            });
+
+        expect(response.statusCode).toBe(400);
+        expect(User.findOne).not.toHaveBeenCalled();
+    });
+
+    test("POST /api/auth/register should reject faculty role", async () => {
+        const response = await request(app)
+            .post("/api/auth/register")
+            .send({
+                name: "Test Faculty",
+                email: "faculty@example.com",
+                password: "password123",
+                role: "faculty"
+            });
+
+        expect(response.statusCode).toBe(400);
+        expect(User.findOne).not.toHaveBeenCalled();
+    });
+
+   
 });

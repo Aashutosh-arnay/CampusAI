@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("@exortek/express-mongo-sanitize");
 const xssMiddleware = require("./middleware/xssMiddleware");
 const morgan = require("morgan");
+const { config } = require("./config/env");
 
 
 const authRoutes = require("./routes/authRoutes");
@@ -36,7 +37,7 @@ app.use(helmet());
 app.use(limiter);
 app.use(
     cors({
-        origin: process.env.CLIENT_URL || "http://localhost:5173"
+       origin: config.clientUrl
     })
 );
 app.use(express.json({ limit: "10kb" }));

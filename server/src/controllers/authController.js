@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/AppError");
 const ApiResponse = require("../utils/apiResponse");
+const { config } = require("../config/env");
 
 // REGISTER API
 const registerUser = asyncHandler(async (req, res) => {
@@ -80,7 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
         throw new ApiError(
             404,
-            "User not found"
+            "Invalid email or password"
             
         );
 
@@ -96,7 +97,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
         throw new ApiError(
             400,
-            "Invalid password"
+            "Invalid email or password"
             
         );
 
@@ -110,10 +111,11 @@ const loginUser = asyncHandler(async (req, res) => {
             role: user.role
         },
 
-        process.env.JWT_SECRET,
+        config.jwtSecret,
 
         {
-            expiresIn: "1d"
+            expiresIn: "1d",
+            algorithm: "HS256"
         }
 
     );

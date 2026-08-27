@@ -16,8 +16,8 @@ const registerValidation = [
         .withMessage("Password must be at least 6 characters"),
 
     body("role")
-        .isIn(["admin", "student", "faculty"])
-        .withMessage("Role must be admin, student, or faculty")
+        .equals("student")
+        .withMessage("Only student registration is allowed")
 
 ];
 
