@@ -1,3 +1,4 @@
+const { mongoIdParam } = require("../validations/paramValidation");
 const express = require("express");
 
 const router = express.Router();
@@ -127,6 +128,8 @@ router.get(
 router.get(
     "/:id",
     authMiddleware,
+    mongoIdParam("id", "Faculty Assignment ID"),
+    validate,
     getAssignmentById
 );
 
@@ -184,6 +187,7 @@ router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
+    mongoIdParam("id", "Faculty Assignment ID"),
     updateFacultyAssignmentValidation,
     validate,
     updateAssignment
@@ -219,6 +223,8 @@ router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
+    mongoIdParam("id", "Faculty Assignment ID"),
+    validate,
     deleteAssignment
 );
 

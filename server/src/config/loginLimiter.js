@@ -5,4 +5,12 @@ const loginLimiter = new RateLimiterMemory({
     duration: 15 * 60
 });
 
-module.exports = loginLimiter;
+const loginIpLimiter = new RateLimiterMemory({
+    points: 20,
+    duration: 15 * 60
+});
+
+module.exports = {
+    loginLimiter,
+    loginIpLimiter
+};

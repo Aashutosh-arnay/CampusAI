@@ -35,6 +35,19 @@ const enrollmentSchema = new mongoose.Schema({
     }
 
 });
+enrollmentSchema.index({ student: 1 });
+enrollmentSchema.index({ subject: 1 });
+enrollmentSchema.index(
+    {
+        student: 1,
+        subject: 1,
+        academicYear: 1,
+        semester: 1
+    },
+    {
+        unique: true
+    }
+);
 
 
 module.exports = mongoose.model(

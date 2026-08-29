@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const validate = require("../middleware/validationMiddleware");
+const { mongoIdParam } = require("../validations/paramValidation");
 
 const {
     createMarksValidation
@@ -136,6 +137,8 @@ router.post(
 router.get(
     "/student/:studentId",
     authMiddleware,
+    mongoIdParam("studentId", "Student ID"),
+    validate,
     getStudentMarks
 );
 
@@ -183,6 +186,8 @@ router.get(
 router.get(
     "/subject/:subjectId",
     authMiddleware,
+    mongoIdParam("subjectId", "Subject ID"),
+    validate,
     getSubjectMarks
 );
 
@@ -219,6 +224,9 @@ router.get(
 router.get(
     "/percentage/:studentId/:subjectId",
     authMiddleware,
+    mongoIdParam("studentId", "Student ID"),
+    mongoIdParam("subjectId", "Subject ID"),
+    validate,
     getMarksPercentage
 );
 
@@ -281,6 +289,8 @@ router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin", "faculty"),
+    mongoIdParam("id", "Marks ID"),
+    validate,
     updateMarks
 );
 
@@ -314,6 +324,8 @@ router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin", "faculty"),
+    mongoIdParam("id", "Marks ID"),
+    validate,
     deleteMarks
 );
 

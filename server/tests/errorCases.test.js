@@ -164,4 +164,15 @@ describe("Error and Edge Cases", () => {
         expect(response.statusCode).toBe(404);
         expect(response.body.message).toBe("Timetable not found");
     });
+    test("should return 400 for an invalid course ID", async () => {
+
+        const response = await request(app)
+            .get("/api/courses/invalid-course-id")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe("Validation failed");
+        expect(response.body.errors[0].message).toBe("Invalid Course ID");
+
+    });
 });

@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const validate = require("../middleware/validationMiddleware");
+const { mongoIdParam } = require("../validations/paramValidation");
 
 const {
     createTimetableValidation
@@ -170,6 +171,8 @@ router.get(
 router.get(
     "/faculty/:facultyAssignmentId",
     authMiddleware,
+    mongoIdParam("facultyAssignmentId", "Faculty Assignment ID"),
+    validate,
     getFacultyTimetable
 );
 
@@ -246,9 +249,10 @@ router.put(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
+    mongoIdParam("id", "Timetable ID"),
+    validate,
     updateTimetable
 );
-
 
 /**
  * @swagger
@@ -279,8 +283,9 @@ router.delete(
     "/:id",
     authMiddleware,
     roleMiddleware("admin"),
+    mongoIdParam("id", "Timetable ID"),
+    validate,
     deleteTimetable
 );
-
 
 module.exports = router;

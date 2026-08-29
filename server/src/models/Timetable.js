@@ -60,5 +60,14 @@ const timetableSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+timetableSchema.index({
+    academicYear: 1,
+    semester: 1,
+    section: 1
+});
+
+timetableSchema.index({
+    facultyAssignment: 1
+});
 
 module.exports = mongoose.model("Timetable", timetableSchema);

@@ -46,5 +46,6 @@ const marksSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
+marksSchema.index({ student: 1 });
+marksSchema.index({ subject: 1 });
 module.exports = mongoose.model("Marks", marksSchema);

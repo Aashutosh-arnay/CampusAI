@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const dns = require("dns");
 
 const logger = require("../utils/logger");
-const config = require("./env");
+const { config } = require("./env");
 
 // Force Node to use public DNS resolvers for MongoDB SRV lookups.
 // Kept from the existing CampusAI setup because it resolved the

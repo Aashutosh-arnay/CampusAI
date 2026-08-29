@@ -1,3 +1,4 @@
+const { mongoIdParam } = require("../validations/paramValidation");
 const express = require("express");
 
 const router = express.Router();
@@ -153,6 +154,8 @@ router.get(
 router.get(
     "/:id",
     authMiddleware,
+    mongoIdParam("id", "Subject ID"),
+    validate,
     getSubjectById
 );
 

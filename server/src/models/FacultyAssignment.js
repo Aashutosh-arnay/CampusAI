@@ -34,7 +34,19 @@ const facultyAssignmentSchema = new mongoose.Schema(
         timestamps: true
     }
 );
-
+facultyAssignmentSchema.index({ faculty: 1 });
+facultyAssignmentSchema.index(
+    {
+        faculty: 1,
+        subject: 1,
+        academicYear: 1,
+        semester: 1,
+        section: 1
+    },
+    {
+        unique: true
+    }
+);
 module.exports = mongoose.model(
     "FacultyAssignment",
     facultyAssignmentSchema

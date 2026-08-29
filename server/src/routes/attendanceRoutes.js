@@ -1,8 +1,7 @@
 const express = require("express");
-
 const router = express.Router();
-
 const validate = require("../middleware/validationMiddleware");
+const { mongoIdParam } = require("../validations/paramValidation");
 
 const {
     markAttendanceValidation
@@ -84,9 +83,10 @@ router.get(
 router.get(
     "/student/:studentId",
     authMiddleware,
+    mongoIdParam("studentId", "Student ID"),
+    validate,
     getStudentAttendance
 );
-
 
 /**
  * @swagger
@@ -112,6 +112,8 @@ router.get(
 router.get(
     "/subject/:subjectId",
     authMiddleware,
+    mongoIdParam("subjectId", "Subject ID"),
+    validate,
     getSubjectAttendance
 );
 
@@ -148,6 +150,9 @@ router.get(
 router.get(
     "/percentage/:studentId/:subjectId",
     authMiddleware,
+    mongoIdParam("studentId", "Student ID"),
+    mongoIdParam("subjectId", "Subject ID"),
+    validate,
     getAttendancePercentage
 );
 
@@ -257,6 +262,8 @@ router.post(
 router.put(
     "/:id",
     authMiddleware,
+    mongoIdParam("id", "Attendance ID"),
+    validate,
     updateAttendance
 );
 
@@ -287,8 +294,9 @@ router.put(
 router.delete(
     "/:id",
     authMiddleware,
+    mongoIdParam("id", "Attendance ID"),
+    validate,
     deleteAttendance
 );
-
 
 module.exports = router;

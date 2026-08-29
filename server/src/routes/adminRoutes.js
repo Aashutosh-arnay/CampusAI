@@ -1,3 +1,4 @@
+const { mongoIdParam } = require("../validations/paramValidation");
 const express = require("express");
 
 const router = express.Router();
@@ -5,6 +6,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 
 const adminMiddleware = require("../middleware/adminMiddleware");
+const validate = require("../middleware/validationMiddleware");
 
 const {
     getAllStudents,
@@ -170,6 +172,8 @@ router.delete(
     "/students/:id",
     authMiddleware,
     adminMiddleware,
+    mongoIdParam("id", "Student ID"),
+    validate,
     deleteStudent
 );
 
@@ -203,6 +207,8 @@ router.delete(
     "/faculty/:id",
     authMiddleware,
     adminMiddleware,
+    mongoIdParam("id", "Faculty ID"),
+    validate,
     deleteFaculty
 );
 

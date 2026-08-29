@@ -9,6 +9,10 @@ const {
 } = require("../validations/courseValidation");
 
 const {
+    mongoIdParam
+} = require("../validations/paramValidation");
+
+const {
     createCourse,
     getAllCourse,
     getCourseById,
@@ -17,7 +21,6 @@ const {
 } = require("../controllers/courseController");
 
 const authMiddleware = require("../middleware/authMiddleware");
-
 const roleMiddleware = require("../middleware/roleMiddleware");
 
 
@@ -116,6 +119,8 @@ router.get(
  *     responses:
  *       200:
  *         description: Course fetched successfully
+ *       400:
+ *         description: Invalid Course ID
  *       401:
  *         description: Authentication failed
  *       404:
@@ -124,6 +129,8 @@ router.get(
 router.get(
     "/:id",
     authMiddleware,
+    mongoIdParam("id", "Course ID"),
+    validate,
     getCourseById
 );
 
@@ -204,6 +211,8 @@ router.put(
  *     responses:
  *       200:
  *         description: Course deleted successfully
+ *       400:
+ *         description: Invalid Course ID
  *       401:
  *         description: Authentication failed
  *       403:
